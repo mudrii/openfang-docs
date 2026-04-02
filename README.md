@@ -1,8 +1,8 @@
 # OpenFang Documentation
 
-**OpenFang** is an open-source Agent Operating System written in Rust. A single ~32 MB static binary delivering autonomous AI agents that run 24/7 on schedules, respond across 40 messaging channels, orchestrate multi-agent workflows, and enforce 16 independent security layers — with no Python runtime or Node.js required.
+**OpenFang** is an open-source Agent Operating System written in Rust. A single ~32 MB static binary delivering autonomous AI agents that run 24/7 on schedules, respond across 42 messaging channels, orchestrate multi-agent workflows, and enforce 16 independent security layers — with no Python runtime or Node.js required.
 
-**Current stable release: v0.4.4** (2026-03-15)
+**Current stable release: v0.5.7** (2026-03-31)
 **GitHub:** https://github.com/RightNow-AI/openfang
 **Website:** https://www.openfang.sh
 **Stars:** 14,595 | **Forks:** 1,722 | **License:** Apache-2.0 OR MIT
@@ -19,8 +19,8 @@
 | [Configuration](configuration.md) | config.toml reference |
 | [Architecture](architecture.md) | 14-crate workspace, subsystems, boot sequence |
 | [Agents](agents.md) | Agent lifecycle, templates, modes |
-| [Hands](hands.md) | 7 autonomous capability packages |
-| [Channels](channels.md) | 40 messaging channel adapters |
+| [Hands](hands.md) | 9 autonomous capability packages |
+| [Channels](channels.md) | 42 messaging channel adapters |
 | [Skills](skills.md) | 60 bundled skills + authoring guide |
 | [Workflows](workflows.md) | Multi-agent pipeline orchestration |
 | [LLM Providers](llm-providers.md) | 27 providers, 130+ models |
@@ -28,6 +28,14 @@
 | [SDK](sdk.md) | JavaScript and Python SDKs |
 | [Migration](migration.md) | Migrating from OpenClaw |
 | [Contributing](contributing.md) | Development setup and contribution guide |
+| [Getting Started](getting-started.md) | First-run tutorial and quick walkthrough |
+| [Desktop](desktop.md) | Tauri 2.0 desktop app guide |
+| [Troubleshooting](troubleshooting.md) | Common issues and solutions |
+| [MCP & A2A](mcp-a2a.md) | Model Context Protocol and Agent-to-Agent integration |
+| [Production Checklist](production-checklist.md) | Deployment hardening guide |
+| [Skill Development](skill-development.md) | Authoring custom skills |
+| [Agent Templates](agent-templates.md) | Pre-built agent templates reference |
+| [Benchmarks](benchmarks.md) | Performance benchmarks and methodology |
 | [Changelog](changelog.md) | Full release history |
 
 ---
@@ -61,11 +69,11 @@ openfang chat
 |---------|--------|
 | **Language** | Rust 2021, single ~32 MB binary |
 | **LLM Providers** | 27 providers, 130+ models |
-| **Channel Adapters** | 40 messaging platforms |
+| **Channel Adapters** | 42 messaging platforms |
 | **Built-in Tools** | 53 core tools + MCP + A2A |
 | **Bundled Skills** | 60 expert knowledge skills |
 | **Agent Templates** | 30 pre-built templates in 4 tiers |
-| **Autonomous Hands** | 8 pre-built 24/7 capability packages |
+| **Autonomous Hands** | 9 pre-built 24/7 capability packages |
 | **Security Layers** | 16 independent defense systems |
 | **Cold Start** | <200 ms |
 | **Idle Memory** | ~40 MB |
@@ -80,7 +88,7 @@ openfang chat
 | Idle memory | 40 MB | 394 MB | 200 MB | 250 MB |
 | Install size | 32 MB | 500 MB | 100 MB | 200 MB |
 | Security systems | 16 | 3 | 1 | Docker |
-| Channel adapters | 40 | 13 | 0 | 0 |
+| Channel adapters | 42 | 13 | 0 | 0 |
 | LLM providers | 27 | 6 | varies | varies |
 
 ---
@@ -97,9 +105,9 @@ openfang-api          (Axum 0.8, 140+ endpoints)
 openfang-kernel       (orchestration, workflows, RBAC, scheduling)
     ├── openfang-runtime   (agent loop, LLM drivers, 53 tools, WASM, MCP, A2A)
     ├── openfang-memory    (SQLite, embeddings, sessions)
-    ├── openfang-channels  (40 channel adapters)
+    ├── openfang-channels  (42 channel adapters)
     ├── openfang-skills    (60 skills, FangHub marketplace)
-    ├── openfang-hands     (8 autonomous Hands)
+    ├── openfang-hands     (9 autonomous Hands)
     ├── openfang-extensions (MCP templates, OAuth2, vault)
     └── openfang-wire      (OFP peer-to-peer protocol)
         openfang-types     (shared types, taint tracking, Ed25519)
@@ -107,7 +115,7 @@ openfang-kernel       (orchestration, workflows, RBAC, scheduling)
 
 ---
 
-## The 8 Autonomous Hands
+## The 9 Autonomous Hands
 
 Hands are pre-built autonomous capability packages that run on schedules without human prompting:
 
@@ -121,5 +129,6 @@ Hands are pre-built autonomous capability packages that run on schedules without
 | **Twitter** | X/Twitter account management (7 content formats) |
 | **Browser** | Web automation with purchase-approval gates |
 | **Trading** | 8-phase market intelligence + Alpaca API execution |
+| **Infisical Sync** | Secret synchronization with Infisical vault |
 
 See [Hands documentation](hands.md) for full details.

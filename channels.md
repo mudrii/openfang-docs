@@ -1,6 +1,6 @@
 # Channel Adapters
 
-OpenFang supports 40 messaging channel adapters. All channels share the same unified bridge architecture: exponential backoff, graceful shutdown, secret zeroization, message splitting, and per-channel configuration overrides.
+OpenFang supports 41 messaging channel adapters. All channels share the same unified bridge architecture: exponential backoff, graceful shutdown, secret zeroization, message splitting, and per-channel configuration overrides.
 
 ---
 
@@ -43,7 +43,7 @@ bot_token = "${SLACK_BOT_TOKEN}"
 
 ---
 
-## All 40 Channel Adapters
+## All 41 Channel Adapters
 
 ### Core Messaging (7)
 
@@ -273,6 +273,20 @@ bot_token = "${SLACK_BOT_TOKEN}"
 
 ---
 
+### IoT & Messaging (1)
+
+#### MQTT
+- **Protocol:** MQTT 3.1.1/5.0 pub/sub
+- **Config:** `broker_url`, `subscribe_topic`, `publish_topic`, `username_env`, `password_env`, `use_tls`, `qos`
+- **Features:** Plain text messages, JSON payloads (`{"text": "message"}`), command messages (`/` prefix), configurable QoS levels
+- **Use case:** IoT device integration, home automation, industrial messaging, any MQTT broker
+- **Limit:** 4,096 chars per message
+- **Setup:** `openfang channel setup mqtt`
+
+*Added in v0.5.4.*
+
+---
+
 ### Not Yet Implemented
 
 #### XMPP
@@ -293,6 +307,8 @@ bot_token = "${SLACK_BOT_TOKEN}"
 | Zulip | 10,000 |
 | Email | 20,000 |
 | WhatsApp | 4,096 |
+| WeCom | 2,048 |
+| MQTT | 4,096 |
 | REST APIs | 4,000–32,000 |
 
 OpenFang automatically splits messages that exceed platform limits.

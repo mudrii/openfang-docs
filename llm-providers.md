@@ -1,6 +1,6 @@
 # LLM Providers
 
-OpenFang supports 27 LLM providers with 130+ models out of the box. Three native drivers (Anthropic, Gemini, OpenAI-compatible) route to all providers. Intelligent model routing, fallback chains, and cost metering are built in.
+OpenFang supports 28 LLM providers with 130+ models out of the box. Three native drivers (Anthropic, Gemini, OpenAI-compatible) route to all providers. Intelligent model routing, fallback chains, and cost metering are built in.
 
 ---
 

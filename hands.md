@@ -2,11 +2,11 @@
 
 Hands are pre-built, opinionated autonomous capability packages that run on schedules 24/7 — no human prompting required. Each Hand includes a multi-phase operational system prompt (500+ words), a domain-specific SKILL.md, guardrails with approval gates for sensitive actions, and full configuration options.
 
-All 8 Hands ship compiled into the binary — no external downloads required.
+All 9 Hands ship compiled into the binary — no external downloads required.
 
 ---
 
-## The 8 Bundled Hands
+## The 9 Bundled Hands
 
 ### Clip — YouTube Content Repurposing
 
@@ -185,6 +185,35 @@ All 8 Hands ship compiled into the binary — no external downloads required.
 
 ---
 
+### Infisical Sync — Secrets Synchronisation
+
+**Purpose:** Autonomous secrets synchronisation between a self-hosted Infisical instance and the agent's local credential vault. Keeps agents in sync with a shared Infisical instance as a single source of truth.
+
+*Added in v0.5.0.*
+
+**7-Phase Pipeline:**
+1. **Startup & state recovery** — Read config, environment variables, recover last sync state
+2. **Schedule bootstrap** — Create recurring sync schedule (first run only)
+3. **Authentication** — Obtain short-lived access token via Infisical Universal Auth
+4. **Project resolution** — Resolve project IDs (single or multi-project)
+5. **Pull secrets** — Fetch secrets from Infisical, diff against local hashes, write changed values to local vault
+6. **Push secrets** — On-demand: push local vault entries back to Infisical (create-then-update pattern)
+7. **State persistence** — Update sync state file, dashboard metrics, and publish completion event
+
+**Configuration (4 settings):**
+- `sync_interval_minutes` — How often to pull (5, 15, 30, or 60 minutes)
+- `environment` — Infisical environment slug (`prod`, `staging`, `dev`)
+- `push_on_vault_write` — Auto-push new local secrets to Infisical
+- `delete_orphans` — Remove local vault entries that no longer exist in Infisical
+
+**Dashboard metrics (6):** Secrets in vault, last sync time, last error, projects synced, secrets pushed, secrets pulled.
+
+**Guardrails:** Secret values are never logged or exposed in event payloads. Access tokens are ephemeral and never persisted. Delete operations require user confirmation.
+
+**Requires:** `INFISICAL_URL`, `INFISICAL_CLIENT_ID`, `INFISICAL_CLIENT_SECRET`. Optional: `INFISICAL_PROJECT_ID`, `INFISICAL_ENVIRONMENT`.
+
+---
+
 ## Activating Hands
 
 Hands are shipped as agent templates in the `agents/` directory:
@@ -239,6 +268,7 @@ Hand state is persisted in `hand_state.json` in the agent's directory. This ensu
 - **Twitter:** Content calendar, performance metrics
 - **Browser:** Session cookies, task history
 - **Trading:** Portfolio state, open positions, trade journal
+- **Infisical Sync:** Secret key hashes, sync timestamps, project IDs, error/push/pull counters
 
 ---
 

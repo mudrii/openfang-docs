@@ -53,7 +53,7 @@ For `promptonly` skills, the SKILL.md file content is injected directly into the
 
 ---
 
-## 60 Bundled Skills
+## 61 Bundled Skills
 
 All bundled skills ship inside the binary (no downloads). They are `promptonly` type — pure expert knowledge injected as system prompt context.
 
@@ -102,7 +102,7 @@ All bundled skills ship inside the binary (no downloads). They are `promptonly` 
 | `elasticsearch` | Mappings, queries, aggregations, relevance tuning |
 | `sql-analyst` | SQL query writing, optimization, analytics |
 
-### APIs & Web (5)
+### APIs & Web (6)
 
 | Skill | Description |
 |-------|-------------|
@@ -111,6 +111,7 @@ All bundled skills ship inside the binary (no downloads). They are `promptonly` 
 | `openapi-expert` | OpenAPI 3.x spec writing, validation, code generation |
 | `oauth-expert` | OAuth 2.0, OIDC, JWT, token management |
 | `web-search` | Information research with source citation |
+| `searxng` | Privacy-respecting metasearch using SearXNG instances, 30+ categories, source citation |
 
 ### AI & ML (4)
 

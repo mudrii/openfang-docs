@@ -2,7 +2,185 @@
 
 All notable changes to OpenFang are documented here, following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
-**Current stable release: v0.4.4** (2026-03-15)
+**Current stable release: v0.5.7** (2026-03-31)
+
+---
+
+## [0.5.7] — 2026-03-31
+
+### Security
+- **Argon2id password hashing** — Dashboard password hashing switched from SHA256 to Argon2id with random salts. Existing `password_hash` values in `config.toml` must be regenerated with `openfang auth hash-password` (**BREAKING** for users with `[auth] enabled = true`)
+- New `openfang auth hash-password` CLI command and startup warning for legacy hashes
+
+### Added
+- **SearXNG search provider** — Self-hosted meta-search engine support with custom URL, JSON output, dynamic category support with validation, pagination, and noise field filtering (only title/url/content/published_date exposed to LLM)
+- **SearXNG search specialist skill** — Bundled skill for SearXNG-powered searches
+- **Nested XML tool call recovery** — New recovery pattern for nested XML parameters in tool calls
+
+### Bug Fixes
+- Alpine Expression Error in settings page caused by `x-show`
+- Agent skills and `mcp_servers` changes now detected on config reload
+- Telegram startup timeout for control-plane calls
+- Token estimation now includes ToolUse arguments in `text_length`
+- Silent reinforcement: `[SILENT]` token recognized in agent replies
+
+---
+
+## [0.5.6] — 2026-03-30
+
+Version bump with SSRF allowlist, Ollama context window support, and embedding model detection.
+
+---
+
+## [0.5.5] — 2026-03-28
+
+### Bug Fixes (5 community issues)
+- Resolve #771, #811, #752, #772, #661
+
+---
+
+## [0.5.4] — 2026-03-27
+
+### Added
+- **MQTT channel adapter** — Pub/sub messaging channel for IoT and event-driven architectures
+- **Infisical Sync Hand** — Secret synchronization with Infisical vault (9th bundled Hand)
+- **Vertex AI driver** — Google Vertex AI with OAuth authentication
+- **HTTP memory backend** — Shared memory infrastructure for multi-instance deployments
+- **LangChain code review agent** — A2A-protocol agent template
+- **MiniMax-M2.7** — New flagship model with updated default alias
+- **NVIDIA NIM** — Added to CLI provider selection wizards
+- **Feishu WebSocket** — WebSocket receive mode with protobuf framing
+- **Cron "Run Now"** — Atomic `try_claim_for_run` replaces racy get/reserve pattern
+- Agent templates exposed in web interface
+- Heartbeat `default_timeout_secs` and interval now configurable
+- Telegram slash commands exposed
+
+### Security
+- `rustls-webpki` updated to 0.103.10 (RUSTSEC-2026-0049)
+- CSP hardened: replaced `unsafe-inline` with per-request nonce
+- Unsafe `Arc` mutation in `update_budget` replaced with `RwLock`
+
+### Bug Fixes (5 community issues + many more)
+- Resolve #875, #872, #867, #824, #833, #766
+- Gemini driver crash on content entries without parts
+- Gemini `INVALID_ARGUMENT` crash after message trimming
+- MCP bridge dropping tool results from servers that send notifications
+- Streamable HTTP MCP responses with SSE framing
+- Claude Code driver: 5 fixes (pipe-buffer deadlock, nested content, HOME injection, serde defaults, system prompt flag)
+- Matrix bot self-reply loop prevention
+- Duplicate tool calls with identical arguments
+- Model repeating succeeded commands
+- Cron: failed manual run pushing `next_run` and premature `last_run` in UI
+- Heartbeat false-positives on agent restore
+- Unicode filenames in file uploads
+- Tool allowlist/blocklist matching now case-insensitive
+- Page-header overlap and overflow in dashboard
+- Notion MCP API call fix
+- Provider reset during API key test in wizard
+
+### Dependency Bumps
+- `governor` 0.8.1 -> 0.10.4
+- `rmcp` for MCP protocol (replaces hand-rolled implementation)
+- `toml` 0.8.2 -> 0.9.12
+- `openssl` 0.10.75 -> 0.10.76
+- `clap_complete` 4.5.66 -> 4.6.0
+
+---
+
+## [0.5.3] — 2026-03-27
+
+### Bug Fixes (7 community issues)
+- Resolve #825, #828, #856, #770, #774, #851/#808, #785
+
+---
+
+## [0.5.2] — 2026-03-26
+
+### Bug Fixes (12 community issues)
+- Resolve #845, #844, #823, #767, #802, #816, #834, #805, #820, #848, #826, #836
+
+---
+
+## [0.5.1] — 2026-03-20
+
+### Bug Fixes
+- KaTeX loaded on demand to prevent first-paint blocking
+- `settingsLoading` renamed to `loading` in API
+- Invisible approval requests in dashboard
+- Matrix `auto_accept_invites` now configurable (default `false`)
+- Normalized provider-backed model updates
+
+### Dependency Bumps
+- `roxmltree` 0.20.0 -> 0.21.1
+- `zip` 2.4.2 -> 4.6.1
+- Docker `build-push-action` 6 -> 7
+- Docker `setup-buildx-action` 3 -> 4
+
+---
+
+## [0.5.0] — 2026-03-20
+
+Major version bump with bug fixes.
+
+---
+
+## [0.4.9] — 2026-03-19
+
+### Added
+- **Image pipeline** — New image processing pipeline
+- Community documentation improvements
+- Lockfile sync
+
+---
+
+## [0.4.8] — 2026-03-19
+
+### Bug Fixes
+- Bug fix batch
+
+---
+
+## [0.4.7] — 2026-03-18
+
+### Bug Fixes
+- Bug fix batch
+
+---
+
+## [0.4.6] — 2026-03-18
+
+### Bug Fixes
+- Bug fix batch
+
+---
+
+## [0.4.5] — 2026-03-18
+
+### Added
+- **WeCom (WeChat Work) channel adapter** — Inbound callbacks, outbound API, access token caching and auto-refresh
+- **Nix support** — `nix run github:RightNow-AI/openfang` (flake outputs for `openfang-cli` and `openfang-desktop`)
+- **Shell skill runtime**
+- Docker runtimes support
+- `release-fast` build profile
+
+### Bug Fixes
+- Community fix batches (multiple rounds)
+- Stable Hand agent IDs
+- Mastodon polling fix
+- Telegram formatting improvements
+- Slack unfurl links
+- Agent rename fix
+- Async session save
+- Codex `id_token` handling
+- Channel agent re-resolution
+- Chromium `--no-sandbox` for root
+- Tool error guidance
+- WhatsApp setup documentation
+- OpenClaw provider alias migration compatibility improvements
+
+### Dependency Bumps
+- `quinn-proto` 0.11.13 -> 0.11.14 (RUSTSEC-2026-0037 DoS fix)
+- `mailparse` bumped
 
 ---
 

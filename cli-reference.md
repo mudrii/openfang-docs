@@ -134,6 +134,22 @@ openfang agent update <agent-id> --system-prompt "You are a Python expert."
 
 ---
 
+## Auth Commands
+
+### `openfang auth hash-password`
+
+Generate an Argon2id password hash for dashboard authentication. Prompts for a password interactively and outputs a PHC-format string to paste into `config.toml`.
+
+```bash
+openfang auth hash-password
+```
+
+The output is an Argon2id hash like `$argon2id$v=19$m=19456,t=2,p=1$...` for use in the `[auth]` config section.
+
+*Added in v0.5.0.*
+
+---
+
 ## Workflow Commands
 
 ### `openfang workflow list`

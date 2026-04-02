@@ -1,12 +1,12 @@
 # Security
 
-OpenFang implements 16 independent security layers in a defense-in-depth architecture. Each layer operates independently so that failure of one does not compromise others.
+OpenFang implements 17 independent security layers in a defense-in-depth architecture. Each layer operates independently so that failure of one does not compromise others.
 
 **Security contact:** jaber@rightnowai.co (48-hour response SLA)
 
 ---
 
-## The 16 Security Layers
+## The 17 Security Layers
 
 ### 1. Capability-Based Access Control
 
@@ -208,7 +208,27 @@ On startup and before each request, the session message history is validated:
 
 This prevents cryptic LLM API errors from corrupted session state.
 
-### 16. Health Endpoint Redaction
+### 16. Argon2id Password Hashing
+
+Dashboard login passwords are hashed using Argon2id with random salts, stored in PHC string format.
+
+```toml
+[auth]
+enabled = true
+username = "admin"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$..."
+```
+
+Generate a password hash:
+```bash
+openfang auth hash-password
+```
+
+This prompts for a password and outputs an Argon2id PHC string to paste into `config.toml`.
+
+**Breaking change (v0.5.0):** Prior versions used unsalted SHA256 for dashboard passwords. Existing `password_hash` values must be regenerated with `openfang auth hash-password`. SHA256 hex hashes are no longer accepted.
+
+### 17. Health Endpoint Redaction
 
 Public health endpoint returns minimal information:
 ```json
@@ -276,6 +296,14 @@ These packages are pinned and audited (`.cargo/audit.toml`):
 | `governor 0.8` | GCRA rate limiting |
 | `argon2` | Password hashing |
 | `aes-gcm` | Vault encryption |
+
+---
+
+## Security Advisories
+
+### RUSTSEC-2026-0049 (rustls-webpki)
+
+Fixed in v0.5.4. The `rustls-webpki` dependency was updated to address a certificate validation issue. No user action required -- the fix is included in the binary.
 
 ---
 

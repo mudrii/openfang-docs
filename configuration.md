@@ -60,7 +60,57 @@ api_key = ""                               # Bearer token (empty = loopback bypa
 [web]
 cors_origins = ["http://localhost:3000"]   # Allowed CORS origins
 enable_swagger = false                     # Enable Swagger UI at /swagger
+search_provider = "auto"                   # auto | brave | tavily | perplexity | searxng | duck_duck_go
 ```
+
+#### `[web.searxng]`
+
+SearXNG is a self-hosted search engine aggregator. No API key required, just point to your instance.
+
+```toml
+[web.searxng]
+url = "https://searxng.example.com"        # SearXNG instance URL (required)
+```
+
+| Field | Description |
+|-------|-------------|
+| `url` | Full URL of your SearXNG instance. Must be accessible from the OpenFang host. |
+
+*Added in v0.5.4.*
+
+#### `[web.fetch]` SSRF Allowlist
+
+Self-hosted deployments can bypass the private-IP SSRF check for specific hosts:
+
+```toml
+[web.fetch]
+ssrf_allowed_hosts = ["n8n.local", "*.olares.com", "10.0.0.0/8"]
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `ssrf_allowed_hosts` | list of strings | `[]` | Exact hostnames, wildcard domains (`*.example.com`), or CIDR ranges. Allowlisted hosts bypass the private-IP check but never bypass cloud metadata endpoint blocking (169.254.169.254, etc.). |
+
+### `[auth]`
+
+Dashboard login authentication. Disabled by default.
+
+```toml
+[auth]
+enabled = true
+username = "admin"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$..."  # openfang auth hash-password
+session_ttl_hours = 168                                # 7 days
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable username/password auth for the dashboard |
+| `username` | string | `"admin"` | Admin username |
+| `password_hash` | string | `""` | Argon2id hash in PHC format. Generate with `openfang auth hash-password`. |
+| `session_ttl_hours` | u64 | `168` | Session token lifetime in hours |
+
+**Breaking change (v0.5.0):** Password hashes must be Argon2id. Older SHA256 hex hashes are no longer accepted.
 
 ### `[quota]`
 
@@ -205,6 +255,22 @@ bot_token = "${MATTERMOST_TOKEN}"
 team_name = "my-team"
 channel_name = "town-square"
 ```
+
+#### MQTT
+
+```toml
+[channels.mqtt]
+enabled = true
+broker_url = "tcp://broker.hivemq.com:1883"
+subscribe_topic = "openfang/inbox"
+publish_topic = "openfang/outbox"
+username_env = "MQTT_USERNAME"
+password_env = "MQTT_PASSWORD"
+use_tls = false
+qos = 1                                   # 0 = at most once, 1 = at least once, 2 = exactly once
+```
+
+*Added in v0.5.4.*
 
 ### MCP Server Configuration
 

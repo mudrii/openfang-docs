@@ -33,6 +33,7 @@ Provider and model counts deserve care: the runtime catalog includes brand varia
 |----------|---------|
 | [review-plan-v0.5.7.md](review-plan-v0.5.7.md) | Review and rewrite plan used for this release-doc pass |
 | [documentation_integrity_findings_v0.5.7.md](documentation_integrity_findings_v0.5.7.md) | Fact-check report, drift analysis, and source methodology |
+| [coverage-matrix-v0.5.7.md](coverage-matrix-v0.5.7.md) | Source-doc coverage map showing what was captured and what was intentionally excluded |
 | [installation.md](installation.md) | Release-accurate install paths and first-run notes |
 | [getting-started.md](getting-started.md) | Minimal path from install to a running daemon |
 | [architecture.md](architecture.md) | Source-derived subsystem overview for `v0.5.7` |

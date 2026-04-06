@@ -1,12 +1,14 @@
 # Security
 
-OpenFang implements 17 independent security layers in a defense-in-depth architecture. Each layer operates independently so that failure of one does not compromise others.
+OpenFang implements 16 documented security layers in a defense-in-depth architecture. Each layer operates independently so that failure of one does not compromise others.
 
 **Security contact:** jaber@rightnowai.co (48-hour response SLA)
 
 ---
 
-## The 17 Security Layers
+## The 16 Security Layers
+
+The upstream release docs keep the headline count at `16`. This page preserves that published boundary and documents `v0.5.7` Argon2id dashboard password hashing separately below.
 
 ### 1. Capability-Based Access Control
 
@@ -208,7 +210,7 @@ On startup and before each request, the session message history is validated:
 
 This prevents cryptic LLM API errors from corrupted session state.
 
-### 16. Argon2id Password Hashing
+### Dashboard Auth Notes
 
 Dashboard login passwords are hashed using Argon2id with random salts, stored in PHC string format.
 
@@ -228,7 +230,7 @@ This prompts for a password and outputs an Argon2id PHC string to paste into `co
 
 **Breaking change in the v0.5.7 release line:** Prior versions used unsalted SHA256 for dashboard passwords. Existing `password_hash` values must be regenerated with `openfang auth hash-password`. SHA256 hex hashes are no longer accepted.
 
-### 17. Health Endpoint Redaction
+### 16. Health Endpoint Redaction
 
 Public health endpoint returns minimal information:
 ```json

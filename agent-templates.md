@@ -2,6 +2,12 @@
 
 OpenFang ships with **30 pre-built agent templates** organized into 4 performance tiers. Each template is a ready-to-spawn `agent.toml` manifest located in the `agents/` directory. Templates cover software engineering, business operations, personal productivity, and everyday tasks.
 
+Counting note:
+
+- the release tree contains `31` directories under `agents/`
+- `30` of those are spawnable templates with an `agent.toml`
+- `langchain-code-reviewer` is present as an integration/example directory, not a regular bundled spawn template
+
 ---
 
 ## Quick Start

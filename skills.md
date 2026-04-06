@@ -57,7 +57,7 @@ For `promptonly` skills, the SKILL.md file content is injected directly into the
 
 All bundled skills ship inside the binary (no downloads). They are `promptonly` type — pure expert knowledge injected as system prompt context.
 
-### DevOps & Infrastructure (8)
+### DevOps & Infrastructure (10)
 
 | Skill | Description |
 |-------|-------------|
@@ -67,6 +67,8 @@ All bundled skills ship inside the binary (no downloads). They are `promptonly` 
 | `terraform` | IaC provisioning, modules, state management |
 | `ansible` | Configuration management, playbooks, roles |
 | `ci-cd` | Pipeline design, GitHub Actions, GitLab CI, Jenkins |
+| `helm` | Helm chart authoring, release workflows, Kubernetes packaging |
+| `linux-networking` | Linux networking, DNS, routing, sockets, packet debugging |
 | `nginx` | Reverse proxy, load balancing, SSL, config optimization |
 | `sysadmin` | Server administration, troubleshooting, monitoring |
 
@@ -130,7 +132,7 @@ All bundled skills ship inside the binary (no downloads). They are `promptonly` 
 | `crypto-expert` | Cryptographic primitives, TLS, key management |
 | `compliance` | SOC2, GDPR, HIPAA, ISO27001 compliance guidance |
 
-### Developer Tools (5)
+### Developer Tools (6)
 
 | Skill | Description |
 |-------|-------------|
@@ -138,6 +140,7 @@ All bundled skills ship inside the binary (no downloads). They are `promptonly` 
 | `code-reviewer` | Code review across languages, best practices |
 | `jira` | Issue tracking, sprints, JQL queries, project management |
 | `linear-tools` | Linear project management, workflows |
+| `regex-expert` | Regular expressions, pattern design, parsing, replacements |
 | `sentry` | Error tracking, performance monitoring, alerts |
 
 ### Productivity & Writing (6)
@@ -150,6 +153,8 @@ All bundled skills ship inside the binary (no downloads). They are `promptonly` 
 | `presentation` | Slide decks, storytelling, executive summaries |
 | `project-manager` | Project planning, risk management, stakeholder comms |
 | `pdf-reader` | PDF extraction, summarization, OCR |
+
+The bundled source comment still says `60`, but the release test asserts `61`; this docs repo uses the tested count and includes the full released list above.
 
 ### Collaboration (4)
 

@@ -147,7 +147,7 @@ For user-facing docs, this repo prefers explaining the catalog shape over collap
 
 ## Security
 
-The release keeps `16` security layers in active documentation and release notes, including:
+The release keeps `16` headline security layers in upstream security documentation, including:
 
 - capability enforcement
 - WASM dual metering
@@ -159,6 +159,8 @@ The release keeps `16` security layers in active documentation and release notes
 - subprocess sandboxing
 - loop guard
 - session repair
-- Argon2id dashboard password hashing
+- health endpoint redaction
+
+Release `v0.5.7` also adds Argon2id dashboard password hashing. The upstream security table still headlines `16` layers, so this docs repo documents Argon2id as a release security hardening change rather than silently changing the canonical layer count.
 
 See [security.md](security.md) for the detailed layer-by-layer writeup.

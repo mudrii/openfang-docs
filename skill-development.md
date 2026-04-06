@@ -36,15 +36,15 @@ OpenFang includes 61 expert knowledge skills compiled into the binary for `v0.5.
 | Languages | `rust-expert`, `python-expert`, `typescript-expert`, `golang-expert` |
 | Frontend | `react-expert`, `nextjs-expert`, `css-expert` |
 | Databases | `postgres-expert`, `redis-expert`, `sqlite-expert`, `mongodb`, `elasticsearch`, `sql-analyst` |
-| APIs & Web | `graphql-expert`, `openapi-expert`, `api-tester`, `oauth-expert` |
+| APIs & Web | `graphql-expert`, `openapi-expert`, `api-tester`, `oauth-expert`, `web-search`, `searxng` |
 | AI/ML | `ml-engineer`, `llm-finetuning`, `vector-db`, `prompt-engineer` |
 | Security | `security-audit`, `crypto-expert`, `compliance` |
 | Dev Tools | `github`, `git-expert`, `jira`, `linear-tools`, `sentry`, `code-reviewer`, `regex-expert` |
-| Writing | `technical-writer`, `writing-coach`, `email-writer`, `presentation` |
+| Writing | `technical-writer`, `writing-coach`, `email-writer`, `presentation`, `project-manager` |
 | Data | `data-analyst`, `data-pipeline` |
 | Collaboration | `slack-tools`, `notion`, `confluence`, `figma-expert` |
-| Career | `interview-prep`, `project-manager` |
-| Advanced | `wasm-expert`, `pdf-reader`, `web-search` |
+| Career | `interview-prep` |
+| Advanced | `wasm-expert`, `pdf-reader` |
 
 These are `prompt_only` skills using the SKILL.md format -- expert knowledge that gets injected into the agent's system prompt.
 

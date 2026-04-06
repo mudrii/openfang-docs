@@ -1,6 +1,12 @@
 # Channel Adapters
 
-OpenFang supports 41 messaging channel adapters. All channels share the same unified bridge architecture: exponential backoff, graceful shutdown, secret zeroization, message splitting, and per-channel configuration overrides.
+Validated against OpenFang release `v0.5.7`.
+
+The most defensible released count is the API's `CHANNEL_REGISTRY`, which contains **42 channel registry entries** in `crates/openfang-api/src/routes.rs`.
+
+That count is higher than some older prose docs because the registry includes distinct entries such as `dingtalk`, `dingtalk_stream`, `wecom`, and `feishu`.
+
+All channels share the same bridge patterns: exponential backoff, graceful shutdown, secret zeroization, message splitting, and per-channel overrides.
 
 ---
 
@@ -43,7 +49,9 @@ bot_token = "${SLACK_BOT_TOKEN}"
 
 ---
 
-## All 41 Channel Adapters
+## Registry Overview
+
+The API registry count is `42`, but the sections below group some closely related platform variants together for readability.
 
 ### Core Messaging (7)
 

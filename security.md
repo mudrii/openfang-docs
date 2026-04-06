@@ -226,7 +226,7 @@ openfang auth hash-password
 
 This prompts for a password and outputs an Argon2id PHC string to paste into `config.toml`.
 
-**Breaking change (v0.5.0):** Prior versions used unsalted SHA256 for dashboard passwords. Existing `password_hash` values must be regenerated with `openfang auth hash-password`. SHA256 hex hashes are no longer accepted.
+**Breaking change in the v0.5.7 release line:** Prior versions used unsalted SHA256 for dashboard passwords. Existing `password_hash` values must be regenerated with `openfang auth hash-password`. SHA256 hex hashes are no longer accepted.
 
 ### 17. Health Endpoint Redaction
 
@@ -238,10 +238,10 @@ GET /api/health
 
 Authenticated health endpoint returns full diagnostics:
 ```json
-GET /api/health (with Authorization header)
+GET /api/health/detail
 {
   "status": "ok",
-  "version": "0.4.4",
+  "version": "v0.5.7",
   "uptime_secs": 3600,
   "agent_count": 5,
   "memory_usage_mb": 42,
@@ -257,26 +257,19 @@ GET /api/health (with Authorization header)
 ```toml
 # ~/.openfang/config.toml
 
-[security]
-# Require authentication for all endpoints (default: loopback bypass)
-require_auth = true
+# API Bearer token for general API access
+api_key = "replace-me"
 
-# API key for Bearer token authentication
-api_key = "${OPENFANG_API_KEY}"
+[auth]
+enabled = true
+username = "admin"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$..."
+```
 
-# CORS allowed origins
-cors_origins = ["http://localhost:3000"]
+Generate the dashboard password hash with:
 
-# Rate limiting
-[security.rate_limit]
-requests_per_minute = 60
-burst_size = 10
-
-# Approval policy (global default)
-[security.approval]
-require_approval = ["shell_exec"]
-approval_timeout_secs = 60
-auto_approve_autonomous = false
+```bash
+openfang auth hash-password
 ```
 
 ---
@@ -293,7 +286,7 @@ These packages are pinned and audited (`.cargo/audit.toml`):
 | `subtle` | Constant-time comparisons |
 | `zeroize` | Secret memory wiping |
 | `rand` | Cryptographic randomness |
-| `governor 0.8` | GCRA rate limiting |
+| `governor 0.10` | GCRA rate limiting |
 | `argon2` | Password hashing |
 | `aes-gcm` | Vault encryption |
 

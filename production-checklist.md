@@ -157,7 +157,7 @@ docker build -f scripts/docker/install-smoke.Dockerfile .
 
 Ensure the CHANGELOG exists at the repo root and covers:
 - All 14 crates and what they do
-- Key features: 40 channels, 60 skills, 20 providers, 51 models
+- Key features for the release being cut, with counts re-verified from the source tree
 - Security systems (16 layers)
 - Desktop app with auto-updater
 - Migration path from OpenClaw
@@ -179,7 +179,7 @@ git add -A
 git commit -m "chore: prepare release"
 
 # Tag and push
-git tag v0.1.0
+git tag v0.x.y
 git push origin main --tags
 ```
 

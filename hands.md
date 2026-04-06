@@ -1,283 +1,77 @@
-# Hands (Autonomous Capability Packages)
+# Hands
 
-Hands are pre-built, opinionated autonomous capability packages that run on schedules 24/7 — no human prompting required. Each Hand includes a multi-phase operational system prompt (500+ words), a domain-specific SKILL.md, guardrails with approval gates for sensitive actions, and full configuration options.
+Validated against OpenFang release `v0.5.7`.
 
-All 9 Hands ship compiled into the binary — no external downloads required.
+Hands are bundled autonomous capability packages managed by the `openfang-hands` crate. They are not the same thing as the `agents/` template catalog.
 
----
+Release fact:
 
-## The 9 Bundled Hands
+- `v0.5.7` bundles `9` Hands in `crates/openfang-hands/bundled`
 
-### Clip — YouTube Content Repurposing
+## Released Hand Catalog
 
-**Purpose:** Converts long-form YouTube videos into vertical short-form clips with AI-generated voice-over.
+| Hand ID | Purpose |
+|---------|---------|
+| `clip` | Turn source video into short-form clips |
+| `lead` | Prospect discovery and enrichment |
+| `collector` | Continuous OSINT-style monitoring |
+| `predictor` | Forecasting and evidence tracking |
+| `researcher` | Deep research and report generation |
+| `twitter` | X/Twitter content management |
+| `browser` | Browser automation with approval controls |
+| `trader` | Market intelligence and trading workflows |
+| `infisical-sync` | Secret synchronization with Infisical |
 
-**Pipeline:**
-1. Download source video (`yt-dlp`)
-2. Transcribe audio (Whisper)
-3. Identify high-value segments (LLM scene scoring)
-4. Extract and reframe clips (`FFmpeg`)
-5. Generate voice-over script (LLM)
-6. Synthesize TTS audio
-7. Overlay captions and branding
-8. Queue for publishing (approval gate before upload)
+## How Hands differ from agent templates
 
-**Key tools:** `yt-dlp`, `FFmpeg`, TTS provider, content platform APIs
+| Surface | Backing source |
+|---------|----------------|
+| Agent templates | `agents/*/agent.toml` |
+| Hands | `crates/openfang-hands/bundled/*/HAND.toml` |
 
----
+Agent templates are manifests you spawn directly. Hands are curated packages with their own definitions, settings, requirement checks, lifecycle, and metrics.
 
-### Lead — Prospect Discovery
-
-**Purpose:** Runs daily to discover, enrich, and score potential leads based on your Ideal Customer Profile (ICP).
-
-**Pipeline:**
-1. Load ICP criteria from config
-2. Search multiple sources (LinkedIn, web, company directories)
-3. Enrich prospect data (company size, tech stack, funding)
-4. Score against ICP (LLM-based scoring)
-5. Deduplicate against existing leads
-6. Export to CSV/JSON or CRM
-7. Send summary report via configured channel
-
-**Key tools:** `web_fetch`, `web_search`, file I/O, channel notification
-
----
-
-### Collector — OSINT Intelligence Monitor
-
-**Purpose:** Continuously monitors web sources for changes, builds a knowledge graph of entities and relationships, and alerts on significant developments.
-
-**Pipeline:**
-1. Crawl configured URLs on schedule
-2. Detect content changes (diff-based)
-3. Extract entities and relationships (LLM)
-4. Update knowledge graph
-5. Sentiment analysis on changes
-6. Alert on high-significance events
-7. Generate intelligence digest
-
-**Key tools:** `web_fetch`, `memory_store`, `memory_recall`, entity extraction, channel notification
-
----
-
-### Predictor — Superforecasting Engine
-
-**Purpose:** Applies superforecasting methodology to track predictions, update probabilities as evidence arrives, and score forecast accuracy using Brier scores.
-
-**Pipeline:**
-1. Monitor configured news and data sources
-2. Collect multi-signal evidence
-3. Generate reasoning chains (LLM chain-of-thought)
-4. Update probability estimates with confidence intervals
-5. Track prediction resolution
-6. Compute Brier scores for accuracy calibration
-7. Report forecast updates
-
-**Key tools:** `web_fetch`, `memory_store`, `memory_recall`, structured reasoning
-
----
-
-### Researcher — Deep Research
-
-**Purpose:** Conducts multi-source, multi-iteration deep research with academic-grade credibility evaluation.
-
-**Methodology:**
-- **CRAAP evaluation:** Currency, Relevance, Authority, Accuracy, Purpose
-- **Cross-reference validation:** Multiple independent sources required
-- **Citation format:** APA bibliography
-- **Multi-language support:** Sources in any language, output in specified language
-- **Iterative refinement:** Follow-up questions until depth threshold met
-
-**Pipeline:**
-1. Parse research question
-2. Generate search queries (multiple angles)
-3. Fetch and evaluate sources
-4. CRAAP credibility scoring per source
-5. Synthesize findings with citations
-6. Identify gaps → additional research iterations
-7. Generate final report with full bibliography
-
-**Key tools:** `web_search`, `web_fetch`, `memory_store`, document generation
-
----
-
-### Twitter — X/Twitter Account Manager
-
-**Purpose:** Autonomously manages an X/Twitter account with content generation, scheduling, and audience engagement.
-
-**7 Content Formats:**
-1. Thread (numbered insights)
-2. Hot take (contrarian opinion)
-3. Question (community engagement)
-4. Behind-the-scenes
-5. Tips (numbered list)
-6. Story (narrative arc)
-7. Data/stat highlight
-
-**Pipeline:**
-1. Analyze account performance metrics
-2. Select content format based on schedule
-3. Generate content (LLM with persona)
-4. Draft approval queue (mandatory human review before posting)
-5. Post on schedule
-6. Monitor replies and mentions
-7. Engage with responses (LLM-generated replies)
-8. Report weekly performance summary
-
-**Key tools:** Twitter/X API, `web_fetch`, analytics, channel notification
-
-**Guardrails:** All posts go through approval queue before publishing.
-
----
-
-### Browser — Web Automation Agent
-
-**Purpose:** Automates web browsing tasks using Playwright: form filling, data extraction, session persistence, and purchase workflows.
-
-**Capabilities:**
-- Page navigation and waiting for load states
-- Form detection and filling
-- Button clicking and interaction
-- Screenshot capture and analysis
-- Session/cookie persistence across runs
-- JavaScript execution in page context
-- Data extraction and structured output
-
-**Guardrails:**
-- **Purchase approval gate:** Any action involving payment or subscription requires explicit user confirmation
-- Browser requires Chromium installation (auto-detected via `doctor`)
-
-**Key tools:** Playwright bridge, `web_fetch`, file I/O, approval workflow
-
----
-
-### Trading — Market Intelligence + Execution
-
-**Purpose:** 8-phase autonomous trading pipeline combining market intelligence, adversarial analysis, risk management, and Alpaca API execution.
-
-*Added in v0.3.45.*
-
-**8-Phase Pipeline:**
-1. **State recovery** — Load portfolio state and open positions
-2. **Portfolio setup** — Verify account, buying power, position limits
-3. **Market intelligence** — Multi-source data collection (price, volume, news, sentiment)
-4. **Multi-factor analysis** — RSI, MACD, Bollinger Bands, VWAP, ATR; 22 candlestick patterns
-5. **Adversarial debate** — Bull case vs Bear case (separate LLM sessions)
-6. **Risk management gate** — Kelly criterion sizing, max drawdown check (mandatory approval gate)
-7. **Alpaca API execution** — Market/limit orders, stop-loss, take-profit
-8. **Analytics** — Trade journal, P&L tracking, strategy refinement
-
-**Configuration (12 settings):**
-- `max_position_size_pct` — Max % of portfolio per position
-- `max_daily_loss_pct` — Daily loss circuit breaker
-- `min_confidence_threshold` — Minimum signal confidence to trade
-- `symbols` — Watchlist
-- `schedule` — Trading schedule (cron)
-- `risk_reward_min` — Minimum risk/reward ratio
-- `paper_trading` — Use Alpaca paper trading mode
-- And 5 more...
-
-**Dashboard metrics (10):** P&L, win rate, Sharpe ratio, max drawdown, trade count, avg holding time, best trade, worst trade, current exposure, buying power remaining.
-
-**Guardrails:** Risk management gate requires explicit approval before any real-money trades.
-
-**Requires:** `ALPACA_API_KEY`, `ALPACA_SECRET_KEY`, market data API key.
-
----
-
-### Infisical Sync — Secrets Synchronisation
-
-**Purpose:** Autonomous secrets synchronisation between a self-hosted Infisical instance and the agent's local credential vault. Keeps agents in sync with a shared Infisical instance as a single source of truth.
-
-*Added in v0.5.0.*
-
-**7-Phase Pipeline:**
-1. **Startup & state recovery** — Read config, environment variables, recover last sync state
-2. **Schedule bootstrap** — Create recurring sync schedule (first run only)
-3. **Authentication** — Obtain short-lived access token via Infisical Universal Auth
-4. **Project resolution** — Resolve project IDs (single or multi-project)
-5. **Pull secrets** — Fetch secrets from Infisical, diff against local hashes, write changed values to local vault
-6. **Push secrets** — On-demand: push local vault entries back to Infisical (create-then-update pattern)
-7. **State persistence** — Update sync state file, dashboard metrics, and publish completion event
-
-**Configuration (4 settings):**
-- `sync_interval_minutes` — How often to pull (5, 15, 30, or 60 minutes)
-- `environment` — Infisical environment slug (`prod`, `staging`, `dev`)
-- `push_on_vault_write` — Auto-push new local secrets to Infisical
-- `delete_orphans` — Remove local vault entries that no longer exist in Infisical
-
-**Dashboard metrics (6):** Secrets in vault, last sync time, last error, projects synced, secrets pushed, secrets pulled.
-
-**Guardrails:** Secret values are never logged or exposed in event payloads. Access tokens are ephemeral and never persisted. Delete operations require user confirmation.
-
-**Requires:** `INFISICAL_URL`, `INFISICAL_CLIENT_ID`, `INFISICAL_CLIENT_SECRET`. Optional: `INFISICAL_PROJECT_ID`, `INFISICAL_ENVIRONMENT`.
-
----
-
-## Activating Hands
-
-Hands are shipped as agent templates in the `agents/` directory:
+## Common Hand Operations
 
 ```bash
-# Spawn a Hand as an agent
-openfang agent spawn agents/clip/agent.toml --name my-clip-hand
-openfang agent spawn agents/trading/agent.toml --name my-trader
-
-# Configure the Hand
-openfang config edit    # Set Hand-specific config in config.toml
+openfang hand list
+openfang hand active
+openfang hand info researcher
+openfang hand check-deps browser
+openfang hand activate researcher
+openfang hand pause <instance-id>
+openfang hand resume <instance-id>
+openfang hand deactivate researcher
 ```
 
-### Schedule-Based Activation
+## Dependency-sensitive Hands
 
-Hands typically run on cron schedules:
+Some Hands have requirement checks before they are fully usable.
 
-```bash
-# Create a schedule for the Researcher hand
-POST /api/cron/jobs
-{
-  "agent_id": "<researcher-hand-id>",
-  "name": "daily-research",
-  "schedule": "0 9 * * *",
-  "message": "Research today's top AI news and summarize findings"
-}
-```
+Examples from the released source:
 
-### Event-Based Activation
+- `browser` checks for `python3` and optionally Chromium
+- `twitter` requires Twitter/X credentials
+- `infisical-sync` requires Infisical connection settings
 
-```bash
-# Activate Collector on system startup
-POST /api/events/triggers
-{
-  "agent_id": "<collector-hand-id>",
-  "pattern": {"lifecycle": {"event": "KernelStarted"}},
-  "message": "Start monitoring configured sources"
-}
-```
+The release CLI exposes:
 
----
+- `openfang hand check-deps <id>`
+- `openfang hand install-deps <id>`
 
-## Hand State Persistence
+## Packaging Model
 
-Hand state is persisted in `hand_state.json` in the agent's directory. This ensures continuity across restarts:
+Each released Hand definition includes:
 
-- **Clip:** Queue of processed/pending clips
-- **Lead:** Known leads database, dedup index
-- **Collector:** Source change hashes, entity graph
-- **Predictor:** Active forecasts, resolution tracker
-- **Researcher:** Research history, citation database
-- **Twitter:** Content calendar, performance metrics
-- **Browser:** Session cookies, task history
-- **Trading:** Portfolio state, open positions, trade journal
-- **Infisical Sync:** Secret key hashes, sync timestamps, project IDs, error/push/pull counters
+- a `HAND.toml`
+- a bundled `SKILL.md`
+- settings metadata
+- dashboard metrics
+- requirement metadata
 
----
+The bundled registry test in `crates/openfang-hands/src/bundled.rs` asserts `hands.len() == 9`.
 
-## Creating Custom Hands
+## Notes
 
-A Hand is an agent with:
-1. A detailed `agent.toml` with operational system prompt
-2. Domain-specific SKILL.md file
-3. Schedule or trigger configuration
-4. Approval gates for sensitive actions
-
-See [Contributing](contributing.md) for the full guide on creating new Hands.
+- Upstream README prose still says `7` Hands in some places; that is stale for `v0.5.7`.
+- This docs repo uses the bundled-hand registry, not the README, as the source of truth.

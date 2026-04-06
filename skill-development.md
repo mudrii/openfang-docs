@@ -11,7 +11,7 @@ A skill consists of:
 1. A **manifest** (`skill.toml` or `SKILL.md`) that declares metadata, runtime type, provided tools, and requirements.
 2. An **entry point** (Python script, WASM module, Node.js module, or prompt-only Markdown) that implements the tool logic.
 
-Skills are installed to `~/.openfang/skills/` and made available to agents through the skill registry. OpenFang ships with **60 bundled skills** compiled into the binary and available immediately.
+Skills are installed to `~/.openfang/skills/` and made available to agents through the skill registry. For release `v0.5.7`, the bundled-skills test in `crates/openfang-skills/src/bundled.rs` asserts **61 bundled skills**.
 
 ### Supported Runtimes
 
@@ -25,9 +25,9 @@ Skills are installed to `~/.openfang/skills/` and made available to agents throu
 
 ---
 
-## 60 Bundled Skills
+## Bundled Skills
 
-OpenFang includes 60 expert knowledge skills compiled into the binary (no installation needed):
+OpenFang includes 61 expert knowledge skills compiled into the binary for `v0.5.7` (no installation needed):
 
 | Category | Skills |
 |----------|--------|

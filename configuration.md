@@ -110,7 +110,7 @@ session_ttl_hours = 168                                # 7 days
 | `password_hash` | string | `""` | Argon2id hash in PHC format. Generate with `openfang auth hash-password`. |
 | `session_ttl_hours` | u64 | `168` | Session token lifetime in hours |
 
-**Breaking change (v0.5.0):** Password hashes must be Argon2id. Older SHA256 hex hashes are no longer accepted.
+**Breaking change in the v0.5.7 release line:** Password hashes must be Argon2id. Older SHA256 hex hashes are no longer accepted.
 
 ### `[quota]`
 

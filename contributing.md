@@ -53,9 +53,9 @@ openfang/
 │   ├── openfang-runtime/     # Agent loop, tools, LLM drivers
 │   ├── openfang-kernel/      # Orchestration, workflows, RBAC
 │   ├── openfang-api/         # Axum HTTP server
-│   ├── openfang-channels/    # 40 channel adapters
-│   ├── openfang-skills/      # 60 skills, FangHub
-│   ├── openfang-hands/       # 8 autonomous Hands
+│   ├── openfang-channels/    # 42 channel registry entries in v0.5.7
+│   ├── openfang-skills/      # 61 bundled skills in v0.5.7
+│   ├── openfang-hands/       # 9 bundled Hands in v0.5.7
 │   ├── openfang-wire/        # OFP peer protocol
 │   ├── openfang-cli/         # CLI interface
 │   ├── openfang-desktop/     # Tauri desktop app

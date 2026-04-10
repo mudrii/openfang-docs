@@ -78,7 +78,7 @@ When the kernel starts, it checks `config.mcp_servers`. If any are configured, i
 5. Namespaces each tool with `mcp_{server}_{tool}`
 6. Caches discovered tool definitions and stores live connections
 
-MCP tools are merged into the agent's available tool set alongside built-in tools (23) and skill tools.
+MCP tools are merged into the agent's available tool set alongside built-in tools (59) and skill tools.
 
 ---
 
@@ -383,7 +383,7 @@ If `a2a` is not present in config, all A2A features are disabled.
 
 Both MCP and A2A tool execution flows through the same security pipeline as all other tool calls:
 - Capability-based access control
-- Tool result truncation (50K character hard cap)
+- Tool result truncation (15K character default, 50K hard cap)
 - Universal 60-second tool execution timeout
 - Loop guard detection
 - Taint tracking on data flowing between tools

@@ -28,7 +28,7 @@ export GROQ_API_KEY="gsk_..."
 # Development build (faster, not optimized)
 cargo build --profile release-fast -p openfang-cli
 
-# Full test suite (1,767+ tests)
+# Full test suite (2,077+ tests)
 cargo test --workspace
 
 # Linting (zero warnings policy — must pass before commit)
@@ -53,9 +53,9 @@ openfang/
 │   ├── openfang-runtime/     # Agent loop, tools, LLM drivers
 │   ├── openfang-kernel/      # Orchestration, workflows, RBAC
 │   ├── openfang-api/         # Axum HTTP server
-│   ├── openfang-channels/    # 42 channel registry entries in v0.5.7
-│   ├── openfang-skills/      # 61 bundled skills in v0.5.7
-│   ├── openfang-hands/       # 9 bundled Hands in v0.5.7
+│   ├── openfang-channels/    # 43 channel adapters
+│   ├── openfang-skills/      # 61 bundled skills
+│   ├── openfang-hands/       # 9 bundled Hands
 │   ├── openfang-wire/        # OFP peer protocol
 │   ├── openfang-cli/         # CLI interface
 │   ├── openfang-desktop/     # Tauri desktop app

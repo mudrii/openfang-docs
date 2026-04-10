@@ -179,7 +179,7 @@ git add -A
 git commit -m "chore: prepare release"
 
 # Tag and push
-git tag v0.x.y
+git tag v0.5.7
 git push origin main --tags
 ```
 

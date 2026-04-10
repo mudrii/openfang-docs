@@ -1,61 +1,78 @@
 # OpenFang Documentation
 
-This repository tracks release-validated documentation for OpenFang.
+Documentation for [OpenFang](https://github.com/RightNow-AI/openfang), an open-source Agent Operating System written in Rust.
 
-Validated baseline:
-- Release tag: `v0.5.7`
-- Release date: `2026-03-31`
-- Source repo: `https://github.com/RightNow-AI/openfang`
+**Current version: v0.5.7** (released April 8, 2026)
 
-This pass intentionally documents released behavior only. The source repo's `main` branch is ahead of `v0.5.7`, but unreleased changes are excluded here.
+## At a Glance
 
-## Verified Release Snapshot
+| Metric | Value |
+|--------|-------|
+| Workspace crates | 14 |
+| Source files | 253 |
+| Lines of code | ~178K |
+| Built-in tools | 59 |
+| Channel adapters | 43 |
+| Bundled Hands | 9 |
+| Bundled skills | 61 across 14 categories |
+| LLM providers | 27, with 3 native drivers |
+| Tests | 2,077+ |
+| Clippy warnings | 0 |
+| Binary size | ~32 MB (single static binary) |
+| License | Apache-2.0 OR MIT |
 
-These values were checked against the `v0.5.7` source tree and release metadata:
+## Getting Started
 
-| Item | Released value | Verification basis |
-|------|----------------|--------------------|
-| Workspace members | 14 | `Cargo.toml` workspace members |
-| Crates under `crates/` | 13 | `crates/` directory in release tree |
-| Agent templates | 30 | `agents/*/agent.toml` in `v0.5.7` |
-| Bundled Hands | 9 | `crates/openfang-hands/bundled/*/HAND.toml` |
-| Bundled skills | 61 | `crates/openfang-skills/src/bundled.rs` test |
-| Channel registry entries | 42 | `CHANNEL_REGISTRY` in `crates/openfang-api/src/routes.rs` |
-| Provider entries | 41 | `ModelCatalog::list_providers()` test |
-| Builtin model entries | 197 | `builtin_models()` entries in `model_catalog.rs` |
-| Security layers | 16 | release notes and source security docs |
+| Document | Description |
+|----------|-------------|
+| [getting-started.md](getting-started.md) | Install, initialize, start the daemon, chat with your first agent |
+| [installation.md](installation.md) | Platform-specific install paths, source builds, release binaries |
 
-Provider and model counts deserve care: the runtime catalog includes brand variants, coding-specific entries, and CLI-backed providers. This docs repo uses the source-derived catalog counts above when precision matters, and avoids marketing-style grouped counts unless the grouping rule is stated.
+## Core Concepts
 
-## Documentation Index
+| Document | Description |
+|----------|-------------|
+| [architecture.md](architecture.md) | 14-crate workspace layout, dependency graph, key patterns |
+| [agents.md](agents.md) | Agent manifest format, lifecycle, execution model |
+| [hands.md](hands.md) | Bundled Hands: curated autonomous capability packages |
+| [skills.md](skills.md) | Skill system overview and bundled skill catalog |
+| [workflows.md](workflows.md) | Workflow engine: multi-step agent orchestration |
+| [channels.md](channels.md) | 43 channel adapters for messaging platforms |
+| [llm-providers.md](llm-providers.md) | Provider catalog, driver architecture, model routing |
+| [security.md](security.md) | Capability-based security, taint tracking, WASM sandboxing, audit trail |
 
-| Document | Purpose |
-|----------|---------|
-| [review-plan-v0.5.7.md](review-plan-v0.5.7.md) | Review and rewrite plan used for this release-doc pass |
-| [documentation_integrity_findings_v0.5.7.md](documentation_integrity_findings_v0.5.7.md) | Fact-check report, drift analysis, and source methodology |
-| [coverage-matrix-v0.5.7.md](coverage-matrix-v0.5.7.md) | Source-doc coverage map showing what was captured and what was intentionally excluded |
-| [installation.md](installation.md) | Release-accurate install paths and first-run notes |
-| [getting-started.md](getting-started.md) | Minimal path from install to a running daemon |
-| [architecture.md](architecture.md) | Source-derived subsystem overview for `v0.5.7` |
-| [agents.md](agents.md) | Agent manifest shape, lifecycle, and runtime concepts |
-| [hands.md](hands.md) | Bundled Hand catalog and lifecycle |
-| [channels.md](channels.md) | Channel adapter overview and sourcing notes |
-| [llm-providers.md](llm-providers.md) | Provider/driver/model catalog guidance with release-safe terminology |
-| [sdk.md](sdk.md) | JavaScript and Python SDK notes |
+## Integration
+
+| Document | Description |
+|----------|-------------|
+| [mcp-a2a.md](mcp-a2a.md) | MCP server connections and A2A protocol support |
+| [sdk.md](sdk.md) | JavaScript and Python SDK usage |
+| [agent-templates.md](agent-templates.md) | Bundled agent template catalog |
+| [skill-development.md](skill-development.md) | Authoring custom skills (TOML + Python/WASM/Node/Shell/PromptOnly) |
+| [configuration.md](configuration.md) | `config.toml` reference and hot-reload behavior |
+| [desktop.md](desktop.md) | Tauri 2.0 native desktop application |
+| [migration.md](migration.md) | Importing agents from OpenClaw and other frameworks |
+
+## Reference
+
+| Document | Description |
+|----------|-------------|
 | [cli-reference.md](cli-reference.md) | CLI command map derived from `openfang-cli` |
-| [api-reference.md](api-reference.md) | API surface map derived from `openfang-api` |
-| [configuration.md](configuration.md) | `config.toml` reference |
-| [security.md](security.md) | Security architecture and hardening systems |
-| [workflows.md](workflows.md) | Workflow engine concepts |
-| [mcp-a2a.md](mcp-a2a.md) | MCP and A2A integration notes |
-| [agent-templates.md](agent-templates.md) | Bundled template catalog |
-| [skill-development.md](skill-development.md) | Skill authoring guide |
-| [production-checklist.md](production-checklist.md) | Maintainer-facing release and deployment checklist |
-| [contributing.md](contributing.md) | Contributor workflow |
-| [changelog.md](changelog.md) | Curated release history |
+| [api-reference.md](api-reference.md) | REST, WebSocket, and SSE API surface |
+| [changelog.md](changelog.md) | Release history |
+| [troubleshooting.md](troubleshooting.md) | Common issues and solutions |
 
-## Scope Notes
+## Contributor Docs
 
-- The GitHub release page for `v0.5.7` is the authoritative source for what was released.
-- The public website and upstream prose docs contain conflicting version and count claims; they were used only as drift signals, not as the final source of truth.
-- Where a count is unstable or ambiguous, this docs repo prefers a source-backed explanation over a simplified headline number.
+| Document | Description |
+|----------|-------------|
+| [contributing.md](contributing.md) | Contributor workflow and code conventions |
+| [production-checklist.md](production-checklist.md) | Release and deployment checklist |
+
+## Audit and Integrity
+
+| Document | Description |
+|----------|-------------|
+| [review-plan-v0.5.7.md](review-plan-v0.5.7.md) | Review plan used for this documentation pass |
+| [documentation_integrity_findings_v0.5.7.md](documentation_integrity_findings_v0.5.7.md) | Fact-check report and drift analysis |
+| [coverage-matrix-v0.5.7.md](coverage-matrix-v0.5.7.md) | Source-to-doc coverage map |

@@ -1,322 +1,220 @@
 # Skills
 
-Skills inject expert knowledge into agents. They are YAML-frontmatter Markdown files (PromptOnly), Python scripts, WASM modules, or Node.js scripts that extend agent capabilities.
+Skills inject expert knowledge into agents. They are Markdown files (PromptOnly), Python scripts, Node.js scripts, WASM modules, or shell scripts that extend agent capabilities. OpenFang v0.5.7 ships with **61 bundled skills** compiled into the binary.
 
 ---
 
 ## Skill Runtimes
 
-| Runtime | Description | Security |
-|---------|-------------|----------|
-| `promptonly` | Markdown injected into system prompt | None (text only) |
-| `python` | Python subprocess, JSON stdin/stdout | Subprocess sandbox |
-| `wasm` | Wasmtime sandbox, fuel metering | WASM dual-metered |
-| `node` | Node.js subprocess (OpenClaw compat) | Subprocess sandbox |
-| `shell` | Shell script (use sparingly) | Subprocess sandbox |
-| `builtin` | Compiled Rust, part of binary | Native |
+| Runtime | Language | Sandboxed | Description |
+|---------|----------|-----------|-------------|
+| `promptonly` | Markdown | N/A | Expert knowledge injected into the LLM system prompt. No code execution. |
+| `python` | Python 3.8+ | Subprocess (`env_clear()`) | JSON stdin/stdout protocol. Environment isolated to prevent secret leakage. |
+| `node` | JavaScript | Subprocess (`env_clear()`) | OpenClaw-compatible. Same isolation as Python. |
+| `wasm` | Rust, C, Go | Wasmtime sandbox | Dual metering (fuel + epoch). Best for security-sensitive tools. |
+| `shell` | Bash/sh | Subprocess (`env_clear()`) | Shell script execution. Use sparingly. |
+| `builtin` | Rust | N/A | Compiled into the binary. For core tools only. |
 
----
-
-## Skill Manifest Format
-
-```toml
-# skill.toml
-[skill]
-name = "my-skill"
-version = "0.1.0"
-description = "Expert knowledge for my domain"
-author = "yourname"
-license = "MIT"
-tags = ["domain", "expert"]
-
-[runtime]
-type = "promptonly"   # or python, wasm, node, shell, builtin
-entry = "main.py"     # Only for non-promptonly runtimes
-
-[[tools.provided]]
-name = "my_tool"
-description = "What this tool does"
-input_schema = {
-  type = "object",
-  properties = {
-    query = { type = "string", description = "The query" }
-  },
-  required = ["query"]
-}
-
-[requirements]
-tools = ["web_fetch"]                    # Built-in tools this skill uses
-capabilities = ["NetConnect(*)"]          # Required capabilities
-```
-
-For `promptonly` skills, the SKILL.md file content is injected directly into the agent's system prompt when the skill is active.
+All subprocess runtimes (`python`, `node`, `shell`) call `env_clear()` before spawning. Only `PATH`, `HOME`, and platform essentials (`SYSTEMROOT`/`TEMP` on Windows, `PYTHONIOENCODING` for Python) are forwarded. This prevents third-party skill code from reading API keys, tokens, or credentials from the host environment.
 
 ---
 
 ## 61 Bundled Skills
 
-All bundled skills ship inside the binary (no downloads). They are `promptonly` type — pure expert knowledge injected as system prompt context.
+All bundled skills ship inside the binary via `include_str!()` -- no downloads needed. They are `promptonly` type: pure expert knowledge injected as system prompt context when assigned to an agent.
 
-### DevOps & Infrastructure (10)
+User-installed skills with the same name override bundled ones.
+
+### DevOps & Infrastructure (11)
 
 | Skill | Description |
 |-------|-------------|
-| `github` | GitHub operations: PRs, issues, Actions, `gh` CLI workflows |
-| `docker` | Container building, Compose, multi-stage builds, health checks |
-| `kubernetes` | kubectl, Helm, deployments, debugging, RBAC |
-| `terraform` | IaC provisioning, modules, state management |
-| `ansible` | Configuration management, playbooks, roles |
-| `ci-cd` | Pipeline design, GitHub Actions, GitLab CI, Jenkins |
-| `helm` | Helm chart authoring, release workflows, Kubernetes packaging |
-| `linux-networking` | Linux networking, DNS, routing, sockets, packet debugging |
-| `nginx` | Reverse proxy, load balancing, SSL, config optimization |
-| `sysadmin` | Server administration, troubleshooting, monitoring |
+| `ansible` | Ansible automation expert for playbooks, roles, inventories, and infrastructure management |
+| `ci-cd` | CI/CD pipeline expert for GitHub Actions, GitLab CI, Jenkins, and deployment automation |
+| `docker` | Docker expert for containers, Compose, Dockerfiles, and debugging |
+| `helm` | Helm chart expert for Kubernetes package management, templating, and dependency management |
+| `kubernetes` | Kubernetes operations expert for kubectl, pods, deployments, and debugging |
+| `linux-networking` | Linux networking expert for iptables, nftables, routing, DNS, and network troubleshooting |
+| `nginx` | Nginx configuration expert for reverse proxy, load balancing, TLS, and performance tuning |
+| `shell-scripting` | Shell scripting expert for Bash, POSIX compliance, error handling, and automation |
+| `sysadmin` | System administration expert for Linux, macOS, Windows, services, and monitoring |
+| `terraform` | Terraform IaC expert for providers, modules, state management, and planning |
+| `prometheus` | Prometheus monitoring expert for PromQL, alerting rules, Grafana dashboards, and observability |
 
 ### Cloud Platforms (3)
 
 | Skill | Description |
 |-------|-------------|
-| `aws` | EC2, S3, Lambda, IAM, CLI, CDK |
-| `gcp` | GKE, Cloud Run, BigQuery, IAM, CLI |
-| `azure` | VMs, AKS, Functions, ARM templates |
+| `aws` | AWS cloud services expert for EC2, S3, Lambda, IAM, and AWS CLI |
+| `azure` | Microsoft Azure expert for az CLI, AKS, App Service, and cloud infrastructure |
+| `gcp` | Google Cloud Platform expert for gcloud CLI, GKE, Cloud Run, and managed services |
 
-### Languages (8)
+### Languages (5)
 
 | Skill | Description |
 |-------|-------------|
-| `rust-expert` | Ownership, lifetimes, async, unsafe, performance |
-| `python-expert` | Idiomatic Python, typing, async, packaging |
-| `typescript-expert` | TypeScript, generics, decorators, tooling |
-| `golang-expert` | Go patterns, goroutines, interfaces, testing |
-| `react-expert` | React 19, hooks, state management, performance |
-| `nextjs-expert` | Next.js App Router, SSR/SSG, deployment |
-| `css-expert` | Modern CSS, Tailwind, animations, layouts |
-| `shell-scripting` | POSIX sh, bash, zsh, cross-platform scripts |
+| `golang-expert` | Go programming expert for goroutines, channels, interfaces, modules, and concurrency patterns |
+| `python-expert` | Python expert for stdlib, packaging, type hints, async/await, and performance optimization |
+| `rust-expert` | Rust programming expert for ownership, lifetimes, async/await, traits, and unsafe code |
+| `typescript-expert` | TypeScript expert for type system, generics, utility types, and strict mode patterns |
+| `wasm-expert` | WebAssembly expert for WASI, component model, Rust/C compilation, and browser integration |
+
+### Frontend (3)
+
+| Skill | Description |
+|-------|-------------|
+| `css-expert` | CSS expert for flexbox, grid, animations, responsive design, and modern layout techniques |
+| `nextjs-expert` | Next.js expert for App Router, SSR/SSG, API routes, middleware, and deployment |
+| `react-expert` | React expert for hooks, state management, Server Components, and performance optimization |
 
 ### Databases (6)
 
 | Skill | Description |
 |-------|-------------|
-| `postgres-expert` | Query optimization, indexing, tuning, replication |
-| `redis-expert` | Data structures, caching patterns, Lua scripting |
-| `mongodb` | Schema design, aggregation, indexing |
-| `sqlite-expert` | Embedded SQLite, WAL, FTS, virtual tables |
-| `elasticsearch` | Mappings, queries, aggregations, relevance tuning |
-| `sql-analyst` | SQL query writing, optimization, analytics |
+| `elasticsearch` | Elasticsearch expert for queries, mappings, aggregations, index management, and cluster operations |
+| `mongodb` | MongoDB operations expert for queries, aggregation pipelines, indexes, and schema design |
+| `postgres-expert` | PostgreSQL expert for query optimization, indexing, extensions, and database administration |
+| `redis-expert` | Redis expert for data structures, caching patterns, Lua scripting, and cluster operations |
+| `sql-analyst` | SQL query expert for optimization, schema design, and data analysis |
+| `sqlite-expert` | SQLite expert for WAL mode, query optimization, embedded patterns, and advanced features |
 
 ### APIs & Web (6)
 
 | Skill | Description |
 |-------|-------------|
-| `api-tester` | HTTP testing, REST/GraphQL debugging, Postman patterns |
-| `graphql-expert` | Schema design, resolvers, federation, performance |
-| `openapi-expert` | OpenAPI 3.x spec writing, validation, code generation |
-| `oauth-expert` | OAuth 2.0, OIDC, JWT, token management |
-| `web-search` | Information research with source citation |
-| `searxng` | Privacy-respecting metasearch using SearXNG instances, 30+ categories, source citation |
+| `api-tester` | API testing expert for curl, REST, GraphQL, authentication, and debugging |
+| `graphql-expert` | GraphQL expert for schema design, resolvers, subscriptions, and performance optimization |
+| `oauth-expert` | OAuth 2.0 and OpenID Connect expert for authorization flows, PKCE, and token management |
+| `openapi-expert` | OpenAPI/Swagger expert for API specification design, validation, and code generation |
+| `searxng` | Privacy-respecting metasearch specialist using SearXNG instances |
+| `web-search` | Web search and research specialist for finding and synthesizing information |
 
 ### AI & ML (4)
 
 | Skill | Description |
 |-------|-------------|
-| `ml-engineer` | Model training, evaluation, MLOps, serving |
-| `llm-finetuning` | LoRA, QLoRA, RLHF, dataset preparation |
-| `vector-db` | Embeddings, similarity search, Pinecone, Qdrant, pgvector |
-| `prompt-engineer` | Prompt design, chain-of-thought, few-shot, evaluation |
+| `llm-finetuning` | LLM fine-tuning expert for LoRA, QLoRA, dataset preparation, and training optimization |
+| `ml-engineer` | Machine learning engineer expert for PyTorch, scikit-learn, model evaluation, and MLOps |
+| `prompt-engineer` | Prompt engineering expert for chain-of-thought, few-shot learning, evaluation, and LLM optimization |
+| `vector-db` | Vector database expert for embeddings, similarity search, RAG patterns, and indexing strategies |
 
 ### Security (3)
 
 | Skill | Description |
 |-------|-------------|
-| `security-audit` | Vulnerability assessment, threat modeling, OWASP |
-| `crypto-expert` | Cryptographic primitives, TLS, key management |
-| `compliance` | SOC2, GDPR, HIPAA, ISO27001 compliance guidance |
+| `compliance` | Compliance expert for SOC 2, GDPR, HIPAA, PCI-DSS, and security frameworks |
+| `crypto-expert` | Cryptography expert for TLS, symmetric/asymmetric encryption, hashing, and key management |
+| `security-audit` | Security audit expert for OWASP Top 10, CVE analysis, code review, and penetration testing methodology |
 
-### Developer Tools (6)
+### Developer Tools (7)
 
 | Skill | Description |
 |-------|-------------|
-| `git-expert` | Advanced Git: rebasing, bisect, reflog, hooks, worktrees |
-| `code-reviewer` | Code review across languages, best practices |
-| `jira` | Issue tracking, sprints, JQL queries, project management |
-| `linear-tools` | Linear project management, workflows |
-| `regex-expert` | Regular expressions, pattern design, parsing, replacements |
-| `sentry` | Error tracking, performance monitoring, alerts |
+| `code-reviewer` | Code review specialist focused on patterns, bugs, security, and performance |
+| `git-expert` | Git operations expert for branching, rebasing, conflicts, and workflows |
+| `github` | GitHub operations expert for PRs, issues, code review, Actions, and gh CLI |
+| `jira` | Jira project management expert for issues, sprints, workflows, and reporting |
+| `linear-tools` | Linear project management expert for issues, cycles, projects, and workflow automation |
+| `regex-expert` | Regular expression expert for crafting, debugging, and explaining patterns |
+| `sentry` | Sentry error tracking and debugging specialist |
 
 ### Productivity & Writing (6)
 
 | Skill | Description |
 |-------|-------------|
-| `technical-writer` | Technical documentation, READMEs, API docs |
-| `writing-coach` | Writing improvement, style, clarity |
-| `email-writer` | Professional email drafting, tone matching |
-| `presentation` | Slide decks, storytelling, executive summaries |
-| `project-manager` | Project planning, risk management, stakeholder comms |
-| `pdf-reader` | PDF extraction, summarization, OCR |
+| `email-writer` | Professional email writing expert for tone, structure, clarity, and business communication |
+| `presentation` | Presentation expert for slide structure, storytelling, visual design, and audience engagement |
+| `project-manager` | Project management expert for Agile, estimation, risk management, and stakeholder communication |
+| `technical-writer` | Technical writing expert for API docs, READMEs, ADRs, and developer documentation |
+| `writing-coach` | Writing improvement specialist for grammar, style, clarity, and structure |
+| `pdf-reader` | PDF content extraction and analysis specialist |
 
-The bundled source comment still says `60`, but the release test asserts `61`; this docs repo uses the tested count and includes the full released list above.
+### Data (2)
+
+| Skill | Description |
+|-------|-------------|
+| `data-analyst` | Data analysis expert for statistics, visualization, pandas, and exploration |
+| `data-pipeline` | Data pipeline expert for ETL, Apache Spark, Airflow, dbt, and data quality |
 
 ### Collaboration (4)
 
 | Skill | Description |
 |-------|-------------|
-| `slack-tools` | Slack API, workflow builder, message formatting |
-| `notion` | Notion database API, blocks, workflows |
-| `confluence` | Confluence pages, spaces, macros |
-| `figma-expert` | Figma components, design tokens, developer handoff |
+| `confluence` | Confluence wiki expert for page structure, spaces, macros, and content organization |
+| `figma-expert` | Figma design expert for components, auto-layout, design systems, and developer handoff |
+| `notion` | Notion workspace management and content creation specialist |
+| `slack-tools` | Slack workspace management and automation specialist |
 
-### Data (3)
-
-| Skill | Description |
-|-------|-------------|
-| `data-analyst` | SQL, pandas, data visualization, statistics |
-| `data-pipeline` | ETL/ELT, orchestration, dbt, streaming |
-| `prometheus` | Metrics, PromQL, alerting, Grafana dashboards |
-
-### Career & Learning (2)
+### Career (1)
 
 | Skill | Description |
 |-------|-------------|
-| `interview-prep` | Technical and behavioral interview preparation |
-| `wasm-expert` | WebAssembly, WASI, Wasmtime, component model |
+| `interview-prep` | Technical interview preparation expert for algorithms, system design, and behavioral questions |
 
 ---
 
 ## Installing Skills
 
+### From ClawHub Marketplace
+
 ```bash
-# From FangHub marketplace
 openfang skill install web-summarizer
 openfang skill install kubernetes-debugger
+```
 
-# From Git URL
+### From a Git Repository
+
+```bash
 openfang skill install https://github.com/user/my-skill
+```
 
-# From local directory
+### From a Local Directory
+
+```bash
 openfang skill install ./path/to/my-skill
+openfang skill install /absolute/path/to/my-skill
+```
+
+### Listing Installed Skills
+
+```bash
+openfang skill list
+```
+
+### Removing Skills
+
+```bash
+openfang skill remove web-summarizer
 ```
 
 ---
 
-## Creating a PromptOnly Skill
+## Uninstalling Skills
 
-The simplest skill type — pure expert knowledge in Markdown:
-
-```
-my-skill/
-├── skill.toml
-└── SKILL.md
+```bash
+openfang skill remove <name>
 ```
 
-`skill.toml`:
-```toml
-[skill]
-name = "my-domain-expert"
-version = "0.1.0"
-description = "Expert in my domain"
-author = "yourname"
-license = "MIT"
-tags = ["domain", "expert"]
-
-[runtime]
-type = "promptonly"
-```
-
-`SKILL.md`:
-```markdown
----
-skill: my-domain-expert
-version: 0.1.0
----
-
-## My Domain Expert
-
-### Key Principles
-- Always validate inputs before processing
-- Use established patterns when available
-- Document edge cases explicitly
-
-### Common Patterns
-...
-
-### Pitfalls to Avoid
-...
-```
+This removes the skill directory from `~/.openfang/skills/` and unregisters it from the skill registry. Bundled skills cannot be removed (they are compiled into the binary), but they can be overridden by installing a user skill with the same name.
 
 ---
 
-## Creating a Python Skill
+## FangHub and ClawHub Marketplaces
 
-```
-my-tool/
-├── skill.toml
-├── SKILL.md
-└── main.py
-```
+OpenFang supports two skill marketplaces:
 
-`skill.toml`:
-```toml
-[skill]
-name = "my-tool"
-version = "0.1.0"
-description = "Does something useful"
-author = "yourname"
+### ClawHub (clawhub.ai)
 
-[runtime]
-type = "python"
-entry = "main.py"
-
-[[tools.provided]]
-name = "my_action"
-description = "Performs the action"
-input_schema = {
-  type = "object",
-  properties = {
-    input = { type = "string" }
-  },
-  required = ["input"]
-}
-```
-
-`main.py`:
-```python
-import sys
-import json
-
-def main():
-    # Read tool call from stdin
-    data = json.load(sys.stdin)
-    tool_name = data["tool"]
-    params = data["params"]
-
-    if tool_name == "my_action":
-        result = do_something(params["input"])
-        print(json.dumps({"result": result}))
-    else:
-        print(json.dumps({"error": f"Unknown tool: {tool_name}"}))
-
-def do_something(input_str):
-    return f"Processed: {input_str}"
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## FangHub Marketplace
-
-FangHub is the community marketplace for OpenFang skills.
+The primary community marketplace with 3,000+ skills in both SKILL.md and Node.js formats.
 
 ```bash
 # Search
 openfang skill search "kubernetes"
-openfang skill search --category devops
 
-# Browse by category (18 categories)
-# Coding, DevOps, AI, Data, Productivity, Security, Cloud, Database,
-# APIs, Frontend, DevTools, Writing, Collaboration, Career, ML,
-# Infrastructure, Networking, Testing
+# Browse by sort order
+openfang skill search --sort trending
+openfang skill search --sort downloads
+openfang skill search --sort stars
 
 # Install
 openfang skill install <slug>
@@ -325,13 +223,32 @@ openfang skill install <slug>
 openfang skill info <slug>
 ```
 
-Web dashboard: **Skills** tab → **ClawHub Marketplace** section.
+The ClawHub client handles:
+- Automatic retry on rate limits (429) and server errors (5xx) with exponential backoff (up to 5 attempts)
+- Respect for `Retry-After` headers
+- SHA256 integrity verification of downloaded content
+- Automatic format detection (SKILL.md vs package.json)
+- Prompt injection scanning before installation
+- Security scan of skill manifests
+
+### FangHub (GitHub-based)
+
+A GitHub-organization-based registry for skills distributed as GitHub releases.
+
+```bash
+openfang skill search "web scraping"
+openfang skill install <skill-name>
+```
+
+### Web Dashboard
+
+The dashboard **Skills** tab provides a visual interface to the ClawHub marketplace. Browse trending skills, view details, and install with one click.
 
 ---
 
 ## Assigning Skills to Agents
 
-Skills can be assigned globally or per-agent:
+Skills can be assigned per-agent in the agent manifest:
 
 ```toml
 # In agent.toml
@@ -339,7 +256,8 @@ Skills can be assigned globally or per-agent:
 enabled = ["github", "docker", "rust-expert"]
 ```
 
-Via API:
+Via the REST API:
+
 ```bash
 # Get agent's active skills
 GET /api/agents/<id>/skills
@@ -349,13 +267,54 @@ PUT /api/agents/<id>/skills
 { "skills": ["github", "kubernetes", "terraform"] }
 ```
 
+The kernel loads skill tools and prompt context at agent spawn time, merging them with the agent's base capabilities.
+
+---
+
+## Workspace Skills
+
+Skills can be scoped to a workspace by placing them in a `.openfang/skills/` directory inside your project. Workspace skills override global and bundled skills with the same name.
+
+```
+my-project/
+  .openfang/
+    skills/
+      my-custom-skill/
+        skill.toml
+        SKILL.md
+```
+
+Workspace skills go through the same security scanning as global skills. Skills blocked for critical prompt injection patterns are counted and reported.
+
+---
+
+## Hot-Reload
+
+OpenFang detects changes to agent skill assignments and MCP server configurations on config reload. When you modify `skills` or `mcp_servers` in an agent's configuration, the changes take effect on the next config reload without restarting the daemon.
+
 ---
 
 ## Security Scanning
 
-All skills are scanned for prompt injection patterns before installation:
-- Override instructions (e.g., "ignore previous instructions")
-- Data exfiltration attempts
-- Capability escalation patterns
+All skills pass through a multi-layer security pipeline before activation:
 
-The scanner runs automatically on `openfang skill install`.
+**Manifest scan** -- checks for dangerous capabilities:
+- Shell execution requests (`ShellExec`, `shell_exec`)
+- Unrestricted network access (`NetConnect(*)`)
+- Filesystem write tools (`file_write`, `file_delete`)
+- Node.js runtime (broad filesystem/network access warning)
+- Unusually high tool count (>10 tools)
+
+**Prompt injection scan** -- detects malicious patterns in SKILL.md content:
+- Override instructions ("ignore previous instructions", "forget your instructions", etc.)
+- Data exfiltration attempts ("send to https://", "base64 encode and send", etc.)
+- Shell command references (`rm -rf`, `chmod`, `sudo`)
+- Excessive content length (>50KB)
+
+Skills with critical-severity prompt injection patterns are **blocked** and will not load. This defense was implemented after 341 malicious skills were discovered on ClawHub in February 2026.
+
+The scanner runs automatically on:
+- `openfang skill install` (ClawHub and local installs)
+- Skill registry load at startup (both bundled and user-installed skills)
+- Workspace skill loading
+- OpenClaw skill migration

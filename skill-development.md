@@ -8,69 +8,74 @@ Skills are pluggable tool bundles that extend agent capabilities in OpenFang. A 
 
 A skill consists of:
 
-1. A **manifest** (`skill.toml` or `SKILL.md`) that declares metadata, runtime type, provided tools, and requirements.
-2. An **entry point** (Python script, WASM module, Node.js module, or prompt-only Markdown) that implements the tool logic.
+1. A **manifest** (`skill.toml`) that declares metadata, runtime type, provided tools, and requirements.
+2. An **entry point** (Python script, Node.js module, WASM module, shell script, or prompt-only Markdown) that implements the tool logic.
+3. An optional **SKILL.md** file with expert knowledge injected into the LLM system prompt.
 
-Skills are installed to `~/.openfang/skills/` and made available to agents through the skill registry. For release `v0.5.7`, the bundled-skills test in `crates/openfang-skills/src/bundled.rs` asserts **61 bundled skills**.
-
-### Supported Runtimes
-
-| Runtime | Language | Sandboxed | Notes |
-|---------|----------|-----------|-------|
-| `python` | Python 3.8+ | No (subprocess with `env_clear()`) | Easiest to write. Uses stdin/stdout JSON protocol. |
-| `wasm` | Rust, C, Go, etc. | Yes (Wasmtime dual metering) | Fully sandboxed. Best for security-sensitive tools. |
-| `node` | JavaScript/TypeScript | No (subprocess) | OpenClaw compatibility. |
-| `prompt_only` | Markdown | N/A | Expert knowledge injected into system prompt. No code execution. |
-| `builtin` | Rust | N/A | Compiled into the binary. For core tools only. |
+Skills are installed to `~/.openfang/skills/` and registered via the skill registry. For v0.5.7, OpenFang ships 61 bundled prompt-only skills compiled into the binary.
 
 ---
 
-## Bundled Skills
+## Supported Runtimes
 
-OpenFang includes 61 expert knowledge skills compiled into the binary for `v0.5.7` (no installation needed):
-
-| Category | Skills |
-|----------|--------|
-| DevOps & Infra | `ci-cd`, `ansible`, `prometheus`, `nginx`, `kubernetes`, `terraform`, `helm`, `docker`, `sysadmin`, `shell-scripting`, `linux-networking` |
-| Cloud | `aws`, `gcp`, `azure` |
-| Languages | `rust-expert`, `python-expert`, `typescript-expert`, `golang-expert` |
-| Frontend | `react-expert`, `nextjs-expert`, `css-expert` |
-| Databases | `postgres-expert`, `redis-expert`, `sqlite-expert`, `mongodb`, `elasticsearch`, `sql-analyst` |
-| APIs & Web | `graphql-expert`, `openapi-expert`, `api-tester`, `oauth-expert`, `web-search`, `searxng` |
-| AI/ML | `ml-engineer`, `llm-finetuning`, `vector-db`, `prompt-engineer` |
-| Security | `security-audit`, `crypto-expert`, `compliance` |
-| Dev Tools | `github`, `git-expert`, `jira`, `linear-tools`, `sentry`, `code-reviewer`, `regex-expert` |
-| Writing | `technical-writer`, `writing-coach`, `email-writer`, `presentation`, `project-manager` |
-| Data | `data-analyst`, `data-pipeline` |
-| Collaboration | `slack-tools`, `notion`, `confluence`, `figma-expert` |
-| Career | `interview-prep` |
-| Advanced | `wasm-expert`, `pdf-reader` |
-
-These are `prompt_only` skills using the SKILL.md format -- expert knowledge that gets injected into the agent's system prompt.
+| Runtime | Language | Sandboxed | Notes |
+|---------|----------|-----------|-------|
+| `promptonly` | Markdown | N/A | Expert knowledge injected into system prompt. No code execution. Default runtime. |
+| `python` | Python 3.8+ | Subprocess with `env_clear()` | JSON stdin/stdout protocol. Easiest to write. |
+| `node` | JavaScript | Subprocess with `env_clear()` | OpenClaw compatibility. Same protocol as Python. |
+| `wasm` | Rust, C, Go | Wasmtime dual metering | Fully sandboxed. Fuel limit + memory limit + capability restriction. |
+| `shell` | Bash/sh | Subprocess with `env_clear()` | Shell script execution. Added in v0.5.0. |
+| `builtin` | Rust | N/A | Compiled into the binary. For core tools only. |
 
 ---
 
 ## SKILL.md Format
 
-The SKILL.md format uses YAML frontmatter and a Markdown body:
+SKILL.md files use YAML frontmatter and a Markdown body. The body becomes `prompt_context` -- expert knowledge injected into the LLM's system prompt when the skill is active.
 
 ```markdown
 ---
-name: rust-expert
-description: Expert Rust programming knowledge
+name: my-domain-expert
+description: Expert knowledge for my domain
+metadata:
+  openclaw:
+    emoji: "🔧"
+    requires:
+      bins:
+        - git
+      env:
+        - API_TOKEN
+    commands:
+      - name: analyze_code
+        description: Analyze code for patterns
 ---
 
-# Rust Expert
+# My Domain Expert
 
 ## Key Principles
-- Ownership and borrowing rules...
-- Lifetime annotations...
+- Always validate inputs before processing
+- Use established patterns when available
+- Document edge cases explicitly
 
 ## Common Patterns
 ...
+
+## Pitfalls to Avoid
+...
 ```
 
-SKILL.md files are automatically parsed and converted to `prompt_only` skills. All SKILL.md files pass through an automated **prompt injection scanner** that detects override attempts, data exfiltration patterns, and shell references before inclusion.
+### Frontmatter Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Skill display name. Falls back to directory name if omitted. |
+| `description` | string | Short description shown in skill listings. |
+| `metadata.openclaw.emoji` | string | Emoji icon for the skill. |
+| `metadata.openclaw.requires.bins` | array | Required system binaries (e.g., `["git", "gh"]`). |
+| `metadata.openclaw.requires.env` | array | Required environment variables. |
+| `metadata.openclaw.commands` | array | Tool definitions with `name`, `description`, and optional `dispatch` config. |
+
+SKILL.md files placed in `~/.openfang/skills/<name>/` are automatically detected and converted to OpenFang format (a `skill.toml` is generated alongside). All SKILL.md content passes through the prompt injection scanner before activation.
 
 ---
 
@@ -81,12 +86,12 @@ SKILL.md files are automatically parsed and converted to `prompt_only` skills. A
 ```
 my-skill/
   skill.toml          # Manifest (required)
+  SKILL.md            # Prompt context (optional, for prompt-only skills)
   src/
     main.py           # Entry point (for Python skills)
-  README.md           # Optional documentation
 ```
 
-### Manifest
+### Full Manifest Example
 
 ```toml
 [skill]
@@ -122,26 +127,26 @@ capabilities = ["NetConnect(*)"]
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Unique skill name (used as install directory name) |
+| `name` | string | Yes | Unique skill name (used as directory name and registry key) |
 | `version` | string | No | Semantic version (default: `"0.1.0"`) |
 | `description` | string | No | Human-readable description |
 | `author` | string | No | Author name or organization |
 | `license` | string | No | License identifier (e.g., `"MIT"`, `"Apache-2.0"`) |
-| `tags` | array | No | Tags for discovery on FangHub |
+| `tags` | array | No | Tags for discovery on ClawHub/FangHub |
 
 #### [runtime] -- Execution Configuration
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `type` | string | Yes | `"python"`, `"wasm"`, `"node"`, or `"builtin"` |
-| `entry` | string | Yes | Relative path to the entry point file |
+| `type` | string | Yes | `"promptonly"`, `"python"`, `"node"`, `"wasm"`, `"shell"`, or `"builtin"` |
+| `entry` | string | Conditional | Relative path to entry point. Required for all runtimes except `promptonly` and `builtin`. |
 
 #### [[tools.provided]] -- Tool Definitions
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Tool name (must be unique across all tools) |
-| `description` | string | Yes | Description shown to the LLM |
+| `name` | string | Yes | Tool name (must be unique across all loaded tools) |
+| `description` | string | Yes | Description shown to the LLM for tool selection |
 | `input_schema` | object | Yes | JSON Schema defining the tool's input parameters |
 
 #### [requirements] -- Host Requirements
@@ -149,30 +154,28 @@ capabilities = ["NetConnect(*)"]
 | Field | Type | Description |
 |-------|------|-------------|
 | `tools` | array | Built-in tools this skill needs the host to provide |
-| `capabilities` | array | Capability strings the agent must have |
+| `capabilities` | array | Capability strings the agent must have (e.g., `"NetConnect(*)"`, `"ShellExec(*)"`) |
 
 ---
 
 ## Python Skills
 
-Python skills run as subprocesses and communicate via JSON over stdin/stdout.
+Python skills run as subprocesses and communicate via JSON over stdin/stdout. The environment is isolated (`env_clear()`) -- only `PATH`, `HOME`, and `PYTHONIOENCODING=utf-8` are forwarded.
 
 ### Protocol
 
-1. OpenFang sends a JSON payload to the script's stdin:
+OpenFang sends a JSON payload to stdin:
 
 ```json
 {
   "tool": "summarize_url",
   "input": {
     "url": "https://example.com"
-  },
-  "agent_id": "uuid-...",
-  "agent_name": "researcher"
+  }
 }
 ```
 
-2. The script writes a JSON result to stdout:
+The script writes a JSON result to stdout:
 
 ```json
 {
@@ -180,13 +183,15 @@ Python skills run as subprocesses and communicate via JSON over stdin/stdout.
 }
 ```
 
-If an error occurs, return an error object:
+On error, return an error object:
 
 ```json
 {
   "error": "Failed to fetch URL: connection refused"
 }
 ```
+
+If stdout is not valid JSON, OpenFang wraps the raw text in `{"result": "<stdout>"}`.
 
 ### Example: Web Summarizer
 
@@ -225,9 +230,9 @@ if __name__ == "__main__":
     main()
 ```
 
-### Using the Python SDK
+### Python SDK
 
-For more advanced skills, use the Python SDK (`sdk/python/openfang_sdk.py`):
+For more advanced skills, use the SDK (`sdk/python/openfang_sdk.py`):
 
 ```python
 #!/usr/bin/env python3
@@ -245,13 +250,34 @@ if __name__ == "__main__":
 
 ---
 
+## Node.js Skills
+
+Node.js skills use the same JSON stdin/stdout protocol as Python. The environment is isolated with `env_clear()` and `NODE_NO_WARNINGS=1`.
+
+Requires Node.js 18+.
+
+```javascript
+const fs = require('fs');
+
+const input = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
+const { tool, input: params } = input;
+
+if (tool === 'my_action') {
+  console.log(JSON.stringify({ result: `Processed: ${params.input}` }));
+} else {
+  console.log(JSON.stringify({ error: `Unknown tool: ${tool}` }));
+}
+```
+
+---
+
 ## WASM Skills
 
-WASM skills run inside a sandboxed Wasmtime environment with resource limits and capability restrictions.
+WASM skills run inside a sandboxed Wasmtime environment with resource limits.
 
-### Building a WASM Skill
+### Building
 
-1. Write your skill in Rust (or any language that compiles to WASM):
+1. Write your skill in Rust (or any language that targets `wasm32-wasi`):
 
 ```rust
 use std::io::{self, Read};
@@ -277,13 +303,13 @@ pub extern "C" fn _start() {
 }
 ```
 
-2. Compile to WASM:
+2. Compile:
 
 ```bash
 cargo build --target wasm32-wasi --release
 ```
 
-3. Reference the `.wasm` file in your manifest:
+3. Reference in manifest:
 
 ```toml
 [runtime]
@@ -293,131 +319,255 @@ entry = "target/wasm32-wasi/release/my_skill.wasm"
 
 ### Sandbox Limits
 
-The WASM sandbox enforces:
-- **Fuel limit**: Maximum computation steps (prevents infinite loops)
-- **Memory limit**: Maximum memory allocation
-- **Capabilities**: Only the capabilities granted to the agent apply
+- **Fuel limit** -- maximum computation steps (prevents infinite loops)
+- **Memory limit** -- maximum memory allocation
+- **Capabilities** -- only the capabilities granted to the agent apply
 
 ---
 
-## Installing Skills
+## Shell Skills
 
-### From a Local Directory
+Shell skills run Bash or sh scripts via subprocess. Added in v0.5.0.
 
-```bash
-openfang skill install /path/to/my-skill
-```
-
-### From FangHub
+Same JSON stdin/stdout protocol. The environment is fully isolated via `env_clear()`.
 
 ```bash
-openfang skill install web-summarizer
-```
+#!/usr/bin/env bash
+set -euo pipefail
 
-### From a Git Repository
+INPUT=$(cat)
+TOOL=$(echo "$INPUT" | jq -r '.tool')
+PARAM=$(echo "$INPUT" | jq -r '.input.query')
 
-```bash
-openfang skill install https://github.com/user/openfang-skill-example.git
-```
-
-### Listing Installed Skills
-
-```bash
-openfang skill list
-```
-
-### Removing Skills
-
-```bash
-openfang skill remove web-summarizer
+case "$TOOL" in
+  my_search)
+    RESULT=$(grep -r "$PARAM" /some/path 2>/dev/null || echo "No matches")
+    echo "{\"result\": \"$RESULT\"}"
+    ;;
+  *)
+    echo "{\"error\": \"Unknown tool: $TOOL\"}"
+    ;;
+esac
 ```
 
 ---
 
-## Publishing to FangHub
+## SHA256 Verification
 
-FangHub is the community skill marketplace for OpenFang.
+OpenFang computes SHA256 checksums for all downloaded skills. The `SkillVerifier` module provides:
 
-### Preparing Your Skill
+- `sha256_hex(data)` -- compute the hex-encoded SHA256 hash
+- `verify_checksum(data, expected_sha256)` -- verify data integrity against a known hash
 
-1. Ensure your `skill.toml` has complete metadata: `name`, `version`, `description`, `author`, `license`, `tags`
-2. Include a `README.md` with usage instructions
-3. Test your skill locally
+When installing from ClawHub, the download content is hashed immediately after receipt and logged for auditability. Checksum comparison is case-insensitive.
 
-### Searching FangHub
+---
+
+## Prompt Injection Scanning
+
+All SKILL.md content (bundled, user-installed, workspace, and ClawHub-downloaded) passes through an automated prompt injection scanner. This was implemented after 341 malicious skills were discovered on ClawHub in February 2026.
+
+### Detected Patterns
+
+**Critical** (blocks skill loading):
+- "ignore previous instructions"
+- "ignore all previous"
+- "disregard previous"
+- "forget your instructions"
+- "you are now"
+- "new instructions:"
+- "system prompt override"
+- "ignore the above"
+- "do not follow"
+- "override system"
+
+**Warning** (logged, skill still loads):
+- Data exfiltration patterns: "send to http/https", "post to http/https", "exfiltrate", "forward all", "send all data", "base64 encode and send", "upload to"
+- Shell command references: `rm -rf`, `chmod`, `sudo`
+
+**Info**:
+- Content exceeding 50,000 bytes
+
+### Manifest Security Scan
+
+Beyond prompt content, the manifest itself is scanned:
+- Node.js runtime triggers a "broad filesystem and network access" warning
+- `ShellExec` or `shell_exec` capability requests are flagged as critical
+- `NetConnect(*)` is flagged as a warning
+- `shell_exec` or `bash` tool requirements are critical
+- `file_write` or `file_delete` tool requirements are warnings
+- More than 10 tool requirements triggers an info notice
+
+---
+
+## Complete Example: Creating a Custom Skill
+
+This walkthrough creates a `url-checker` skill that verifies whether URLs are reachable.
+
+### 1. Create the directory
 
 ```bash
-openfang skill search "web scraping"
+mkdir -p ~/.openfang/skills/url-checker
+cd ~/.openfang/skills/url-checker
 ```
 
-### Publishing
+### 2. Write skill.toml
+
+```toml
+[skill]
+name = "url-checker"
+version = "0.1.0"
+description = "Checks whether URLs are reachable and reports HTTP status codes"
+author = "yourname"
+license = "MIT"
+tags = ["web", "monitoring", "health-check"]
+
+[runtime]
+type = "python"
+entry = "main.py"
+
+[[tools.provided]]
+name = "check_url"
+description = "Send an HTTP HEAD request to a URL and report its status code and response time"
+input_schema = { type = "object", properties = { url = { type = "string", description = "The URL to check" } }, required = ["url"] }
+
+[[tools.provided]]
+name = "check_urls_batch"
+description = "Check multiple URLs and return a status report"
+input_schema = { type = "object", properties = { urls = { type = "array", items = { type = "string" }, description = "List of URLs to check" } }, required = ["urls"] }
+
+[requirements]
+capabilities = ["NetConnect(*)"]
+```
+
+### 3. Write main.py
+
+```python
+#!/usr/bin/env python3
+import json
+import sys
+import time
+import urllib.request
+
+
+def check_url(url: str) -> dict:
+    try:
+        start = time.time()
+        req = urllib.request.Request(url, method="HEAD",
+                                     headers={"User-Agent": "OpenFang-URLChecker/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            elapsed = round((time.time() - start) * 1000)
+            return {"url": url, "status": resp.status, "time_ms": elapsed, "ok": True}
+    except Exception as e:
+        return {"url": url, "status": 0, "error": str(e), "ok": False}
+
+
+def main():
+    payload = json.loads(sys.stdin.read())
+    tool = payload["tool"]
+    params = payload["input"]
+
+    try:
+        if tool == "check_url":
+            result = check_url(params["url"])
+        elif tool == "check_urls_batch":
+            result = [check_url(u) for u in params["urls"]]
+        else:
+            print(json.dumps({"error": f"Unknown tool: {tool}"}))
+            return
+        print(json.dumps({"result": result}))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 4. Test locally
 
 ```bash
+echo '{"tool":"check_url","input":{"url":"https://example.com"}}' | python3 main.py
+```
+
+Expected output:
+```json
+{"result": {"url": "https://example.com", "status": 200, "time_ms": 123, "ok": true}}
+```
+
+### 5. Install
+
+```bash
+openfang skill install ~/.openfang/skills/url-checker
+```
+
+### 6. Assign to an agent
+
+Add to your agent's configuration:
+
+```toml
+skills = ["url-checker"]
+```
+
+Or via the API:
+
+```bash
+curl -X PUT http://127.0.0.1:4200/api/agents/<id>/skills \
+  -H "Content-Type: application/json" \
+  -d '{"skills": ["url-checker"]}'
+```
+
+---
+
+## OpenClaw Compatibility
+
+OpenFang can install and run OpenClaw-format skills. The installer auto-detects both formats:
+
+**SKILL.md format** -- Detected by the presence of a `SKILL.md` file with YAML frontmatter. Converted to a `promptonly` skill with the Markdown body as prompt context.
+
+**Node.js format** -- Detected by `package.json` + `index.js`/`index.ts`/`dist/index.js`. Converted to a `node` runtime skill. TypeScript skills must be compiled first (`npm run build`).
+
+Tool name translation is automatic. OpenClaw tool names are mapped to OpenFang equivalents (e.g., `Bash` becomes `shell_exec`, `Read` becomes `file_read`).
+
+Skills imported via `openfang migrate --from openclaw` are scanned and reported in the migration report.
+
+---
+
+## Publishing to ClawHub
+
+```bash
+# Validate and package
 openfang skill publish
 ```
 
-This validates the manifest, packages the skill, and uploads it to the FangHub registry.
+Ensure your `skill.toml` has complete metadata: `name`, `version`, `description`, `author`, `license`, and `tags`.
 
 ---
 
 ## CLI Commands
 
 ```bash
-openfang skill install <source>     # Install from local dir, FangHub name, or git URL
+openfang skill install <source>     # Install from local dir, ClawHub slug, or git URL
 openfang skill list                 # List all installed skills
 openfang skill remove <name>        # Remove an installed skill
-openfang skill search <query>       # Search FangHub
+openfang skill search <query>       # Search ClawHub marketplace
+openfang skill info <slug>          # View ClawHub skill details
 openfang skill create               # Scaffold a new skill (interactive)
+openfang skill publish              # Publish to ClawHub
 ```
-
-### Scaffolding
-
-```bash
-openfang skill create
-```
-
-Prompts for skill name, description, and runtime type, then generates a working template in `~/.openfang/skills/`.
 
 ---
 
-## Using Skills in Agent Manifests
+## Skill Provenance
 
-Reference skills in the agent manifest's `skills` field:
+Every skill tracks its origin via the `source` field:
 
-```toml
-name = "my-assistant"
-version = "0.1.0"
-description = "An assistant with extra skills"
-author = "openfang"
-module = "builtin:chat"
-skills = ["web-summarizer", "data-analyzer"]
-
-[model]
-provider = "groq"
-model = "llama-3.3-70b-versatile"
-
-[capabilities]
-tools = ["file_read", "web_fetch", "summarize_url"]
-memory_read = ["*"]
-memory_write = ["self.*"]
-```
-
-The kernel loads skill tools and prompts at agent spawn time, merging them with the agent's base capabilities.
-
----
-
-## OpenClaw Compatibility
-
-OpenFang can install and run OpenClaw-format skills. The skill installer auto-detects OpenClaw skills (by looking for `package.json` + `index.ts`/`index.js`) and converts them:
-
-1. Detects the OpenClaw format
-2. Generates a `skill.toml` manifest from `package.json`
-3. Maps tool names to OpenFang conventions
-4. Copies the skill to the OpenFang skills directory
-
-If automatic conversion does not work, create a `skill.toml` manually with `[runtime] type = "node"` and `entry = "index.js"`.
-
-Skills imported via `openfang migrate --from openclaw` are also scanned and reported in the migration report.
+| Source | Description |
+|--------|-------------|
+| `Bundled` | Compiled into the OpenFang binary at build time |
+| `Native` | Manually installed or locally developed |
+| `OpenClaw` | Converted from OpenClaw SKILL.md or package.json format |
+| `ClawHub { slug, version }` | Downloaded from the ClawHub marketplace |
 
 ---
 
@@ -430,4 +580,3 @@ Skills imported via `openfang migrate --from openclaw` are also scanned and repo
 5. **Handle errors gracefully** -- always return a JSON error object rather than crashing.
 6. **Version carefully** -- use semantic versioning; breaking changes require a major version bump.
 7. **Test with multiple agents** -- verify your skill works with different agent templates and providers.
-8. **Include a README** -- document setup steps, dependencies, and example usage.

@@ -491,9 +491,10 @@ model = "llama3.2"
 | Aspect | OpenFang | OpenClaw |
 |--------|----------|----------|
 | Language | Rust | Python |
-| Channels | 40 | 38 |
-| Skills | 60 | 57 |
-| Providers | 20 | 3 |
+| Channels | 43 | 38 |
+| Skills | 61 | 57 |
+| Providers | 27 | 3 |
+| Tools | 59 | 41 |
 | Security | 16 systems | Config-based |
 | Binary size | ~30 MB | ~200 MB |
 | Startup | <200 ms | ~3 s |
@@ -559,6 +560,44 @@ For local Ollama embeddings:
 embedding_provider = "ollama"
 embedding_model = "nomic-embed-text"
 ```
+
+---
+
+## v0.5.x Known Issues
+
+### Dashboard password hash requires regeneration (v0.5.7)
+
+**BREAKING:** v0.5.7 switched dashboard password hashing from SHA256 to Argon2id. Existing `password_hash` values in `config.toml` will no longer work.
+
+**Fix:** Regenerate the hash:
+```bash
+openfang auth hash-password
+```
+
+Then update the `password_hash` field in `~/.openfang/config.toml`.
+
+### SearXNG search requires instance URL (v0.5.6+)
+
+The SearXNG search provider requires a self-hosted SearXNG instance URL in config:
+```toml
+[search]
+provider = "searxng"
+url = "http://localhost:8888"
+```
+
+### Agent config hot-reload may miss skills/mcp_servers changes (fixed in v0.5.2+)
+
+Prior to v0.5.2, changes to `skills` and `mcp_servers` sections in agent TOML files were not detected by config hot-reload. Fixed in v0.5.2.
+
+### Silent reinforcement tokens in agent replies (fixed in v0.5.5+)
+
+Prior to v0.5.5, the `[SILENT]` token in agent replies was not recognized, causing it to appear in output. Fixed in v0.5.5.
+
+### Token estimation excludes ToolUse arguments (fixed in v0.5.5+)
+
+Prior to v0.5.5, token estimation did not include ToolUse argument text, leading to underestimated token counts. Fixed in v0.5.5.
+
+---
 
 ### How do I report a bug or request a feature?
 

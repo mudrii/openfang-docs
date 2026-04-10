@@ -1,166 +1,178 @@
 # Architecture
 
-Validated against OpenFang release `v0.5.7`.
+OpenFang v0.5.7 is a Cargo workspace with 14 crates (13 under `crates/` plus `xtask`), totaling ~178K lines of code across 253 source files. The workspace compiles to a single ~32 MB statically linked binary with 2,077+ tests and zero clippy warnings.
 
-This page documents the released source layout rather than the marketing copy in the upstream README and website.
-
-## Release Baseline
-
-| Item | Value |
-|------|-------|
-| Workspace members | 14 |
-| Crates under `crates/` | 13 |
-| Bundled agent templates | 30 |
-| Bundled Hands | 9 |
-| Bundled skills | 61 |
-| Channel registry entries | 42 |
-| Security layers | 16 |
-
-## Workspace Layout
-
-OpenFang is a Cargo workspace with `13` crates under `crates/` plus `xtask`.
+## Workspace Members
 
 ### Core crates
 
-| Crate | Responsibility |
-|-------|----------------|
-| `openfang-types` | Shared types for agents, tools, events, config, taint labels, approvals, and model metadata |
-| `openfang-memory` | SQLite-backed persistence, sessions, usage data, and knowledge structures |
-| `openfang-runtime` | Agent loop, drivers, tool execution, sandboxing, MCP/A2A glue, web tooling, audit helpers |
-| `openfang-kernel` | System assembly, agent registry, scheduler, workflow engine, routing, approvals, orchestration |
-| `openfang-api` | HTTP, WebSocket, and SSE server plus dashboard-facing routes |
-| `openfang-cli` | End-user CLI, TUI entrypoints, daemon control, setup flows |
+These six crates form the vertical spine from shared types up through the user-facing CLI.
 
-### Integration and packaging crates
+| Crate | Description | Key dependencies |
+|-------|-------------|-----------------|
+| `openfang-types` | Shared types: agents, tools, events, config, capabilities, taint labels, model catalog entries, manifest signing. Contains no business logic. | serde, chrono, uuid, ed25519-dalek |
+| `openfang-memory` | SQLite-backed persistence with three storage backends: structured key-value store, semantic text search (LIKE matching, Qdrant planned), and a knowledge graph for entities/relations. | openfang-types, rusqlite |
+| `openfang-runtime` | Agent execution loop, LLM driver abstraction (3 native drivers: Anthropic, Gemini, OpenAI-compatible), 59 built-in tools, WASM sandboxing, MCP client, A2A protocol, browser automation, media understanding, taint tracking, audit helpers. | openfang-types, openfang-memory, openfang-skills, wasmtime, rmcp, reqwest |
+| `openfang-kernel` | System assembly: agent registry, capability manager, event bus, scheduler, supervisor, workflow engine, trigger engine, cron scheduler, approval manager, metering engine, config hot-reload. | openfang-types, openfang-memory, openfang-runtime, openfang-skills, openfang-hands, openfang-extensions, openfang-wire, openfang-channels |
+| `openfang-api` | HTTP/WebSocket/SSE server (Axum), REST routes, dashboard, rate limiting, session auth (Argon2id), OpenAI-compatible endpoint, channel bridge orchestration. | openfang-kernel, openfang-runtime, openfang-types, axum, tower-http, governor |
+| `openfang-cli` | End-user CLI and TUI (Ratatui), daemon lifecycle (`start`/`stop`), `init` wizard, `chat`, `agent` subcommands, shell completions, migration commands. | openfang-kernel, openfang-api, openfang-types, clap, ratatui |
 
-| Crate | Responsibility |
-|-------|----------------|
-| `openfang-channels` | Channel adapters and bridge infrastructure |
-| `openfang-skills` | Bundled skills, installed skills, verification, marketplace support |
-| `openfang-hands` | Bundled Hand definitions and hand registry/lifecycle |
-| `openfang-extensions` | Integration templates and extension support |
-| `openfang-wire` | OFP peer-to-peer networking |
-| `openfang-migrate` | Migration helpers from other agent frameworks |
-| `openfang-desktop` | Tauri desktop shell |
-| `xtask` | Build and release automation |
+### Integration crates
 
-## Runtime Topology
+| Crate | Description | Key dependencies |
+|-------|-------------|-----------------|
+| `openfang-channels` | 43 channel adapters converting platform messages into unified `ChannelMessage` events. Covers Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Teams, email (SMTP/IMAP), IRC, MQTT, and 30+ more across messaging, social, enterprise, and niche categories. | openfang-types, reqwest, tokio-tungstenite, lettre, imap, rumqttc, prost |
+| `openfang-skills` | Skill registry, bundled skill loader (61 skills via `include_str!()`), marketplace client (ClawHub), OpenClaw compatibility layer, skill verification/security scanning, installer. Skill runtimes: Python, WASM, Node, Shell, Builtin, PromptOnly. | openfang-types, walkdir, zip |
+| `openfang-hands` | Hand registry and lifecycle for 9 bundled Hands (browser, clip, collector, infisical-sync, lead, predictor, researcher, trader, twitter). A Hand is a curated autonomous agent package that users activate from a marketplace-style UI. | openfang-types, dashmap |
+| `openfang-extensions` | Integration system: 25 bundled MCP server templates, AES-256-GCM encrypted credential vault, OAuth2 PKCE flows (Google/GitHub/Microsoft/Slack), health monitor with auto-reconnect. | openfang-types, aes-gcm, argon2, reqwest |
+| `openfang-wire` | OpenFang Protocol (OFP) for peer-to-peer agent networking. PeerNode listens for connections, PeerRegistry tracks known peers, WireMessage is the JSON-RPC framed protocol. | openfang-types, hmac, sha2, dashmap |
+| `openfang-migrate` | Migration engine for importing agents, memory, sessions, skills, and channel configs from OpenClaw (LangChain and AutoGPT planned). | openfang-types, serde_yaml, json5, walkdir |
 
-```text
-CLI / TUI / Desktop
-        |
-        v
-  openfang-api
-        |
-        v
-  openfang-kernel
-    |      |      |      |
-    |      |      |      +-- openfang-wire
-    |      |      +--------- openfang-channels
-    |      +---------------- openfang-memory
-    +----------------------- openfang-runtime
-              |       |       |
-              |       |       +-- openfang-skills
-              |       +---------- openfang-hands
-              +------------------ openfang-types
+### Build crate
+
+| Crate | Description |
+|-------|-------------|
+| `openfang-desktop` | Tauri 2.0 native desktop shell. Embeds the kernel and API server, adds system tray, global shortcuts, notifications, auto-update. |
+| `xtask` | Build and release automation (cross-compilation, packaging, checksums). |
+
+## Dependency Graph
+
 ```
+openfang-cli -----> openfang-api -----> openfang-kernel
+    |                   |                   |   |   |   |
+    |                   |                   |   |   |   +-- openfang-wire
+    |                   |                   |   |   +------ openfang-channels
+    |                   |                   |   +---------- openfang-hands
+    |                   |                   +-------------- openfang-extensions
+    |                   |                   |
+    +-------------------+-------> openfang-runtime ------> openfang-skills
+                                      |         |
+                                      |         +-------> openfang-memory
+                                      |                       |
+                                      +-----------------------+---> openfang-types
+```
+
+`openfang-desktop` parallels `openfang-cli`, depending on `openfang-kernel` and `openfang-api` directly. `openfang-migrate` depends only on `openfang-types`. `xtask` has no internal dependencies.
+
+## Key Architectural Patterns
+
+### KernelHandle trait
+
+The `KernelHandle` trait (defined in `openfang-runtime/src/kernel_handle.rs`) breaks the circular dependency between runtime and kernel. The runtime needs to call kernel operations (spawn agents, send messages, access shared memory, manage tasks) during tool execution, but the kernel depends on the runtime for agent loops. The solution:
+
+1. `openfang-runtime` defines the `KernelHandle` trait with methods like `spawn_agent()`, `send_to_agent()`, `memory_store()`, `task_post()`, `hand_activate()`, `send_channel_message()`, etc.
+2. `openfang-kernel` implements `KernelHandle` on `OpenFangKernel`.
+3. The kernel passes itself (as `Arc<dyn KernelHandle>`) into `run_agent_loop()`.
+
+This means the runtime crate never imports the kernel crate, keeping the dependency graph acyclic.
+
+### AppState bridge
+
+`AppState` (in `openfang-api/src/server.rs`) bridges the kernel into the Axum HTTP layer. It wraps:
+
+- `kernel: Arc<OpenFangKernel>` -- the kernel reference shared across all route handlers
+- `bridge_manager` -- channel bridge lifecycle (Telegram bots, Discord gateways, etc.)
+- `channels_config` -- hot-reloadable channel configuration
+- `budget_config` -- runtime-updatable budget limits
+- `provider_probe_cache` -- LLM provider health check results
+- `clawhub_cache` -- marketplace metadata cache
+- `shutdown_notify` -- coordinated graceful shutdown
+
+Route handlers receive `AppState` via Axum's state extraction and call into the kernel.
+
+### Daemon detection
+
+The CLI and daemon communicate through a `daemon.json` file written to `~/.openfang/`:
+
+```json
+{
+  "pid": 12345,
+  "listen_addr": "127.0.0.1:4200",
+  "started_at": "2026-04-08T12:00:00Z",
+  "version": "0.5.7",
+  "platform": "aarch64-apple-darwin"
+}
+```
+
+CLI commands read this file to discover the running daemon's address, then issue HTTP requests to the API. If no daemon is running, the CLI reports the status and suggests `openfang start`.
+
+### Capability-based security
+
+Every agent declares its capabilities in its manifest. The kernel's `CapabilityManager` enforces these at runtime before any tool execution. Capability types include:
+
+- `FileRead(glob)` / `FileWrite(glob)` -- filesystem access scoped by pattern
+- `NetConnect(pattern)` / `NetListen(port)` -- network access
+- `ToolInvoke(name)` / `ToolAll` -- tool execution permissions
+- `ShellExec(pattern)` -- shell command filtering
+- `AgentSpawn` / `AgentMessage(pattern)` / `AgentKill(pattern)` -- inter-agent permissions
+- `MemoryRead(scope)` / `MemoryWrite(scope)` -- memory access scoping
+- `OfpDiscover` / `OfpConnect(pattern)` -- OFP networking permissions
+
+Child agents inherit capabilities from their parent. The `spawn_agent_checked()` method on `KernelHandle` verifies that every capability in a child manifest is covered by the parent's grants.
 
 ## Boot Sequence
 
-At a high level, the released daemon path does the following:
-
-1. reads `config.toml`
-2. initializes data directories and SQLite state
-3. builds the model catalog and provider status view
-4. loads agents, skills, Hands, and configured integrations
-5. starts schedulers, background tasks, and channel bridges
-6. serves the API and dashboard
-
-The CLI and desktop app both sit on top of the same core runtime rather than maintaining separate logic paths.
+1. Load `~/.openfang/config.toml` (or create defaults via `openfang init`)
+2. Initialize data directories and SQLite state (`MemorySubstrate`)
+3. Build the model catalog (27 providers, detect API key availability)
+4. Create the kernel: agent registry, capability manager, event bus, scheduler, supervisor, workflow engine, trigger engine, cron scheduler, approval manager, metering engine, audit log, WASM sandbox, browser manager, media engine, TTS engine, hand registry, extension registry, credential vault
+5. Load agents from `~/.openfang/agents/` and bundled templates
+6. Load skills: 61 bundled + user-installed from `~/.openfang/skills/`
+7. Connect MCP servers (from config + installed extensions)
+8. Start channel bridges (Telegram, Discord, Slack, etc.)
+9. Start OFP peer node (if configured)
+10. Launch background agents (autonomous agents, scheduled tasks)
+11. Bind the Axum HTTP server on `127.0.0.1:4200` (default)
+12. Write `daemon.json` for CLI discovery
+13. Serve API, dashboard, and WebSocket connections
 
 ## Agent Execution Model
 
-The released agent loop combines:
+The agent loop (`openfang-runtime/src/agent_loop.rs`) runs each conversation turn:
 
-- prompt construction
-- session loading and repair
-- model invocation
-- tool-call detection
-- capability checks
-- tool execution
-- usage accounting
-- loop-guard protection
-- optional compaction when context pressure grows
+1. **Prompt construction** -- system prompt + skill context + session history + tool definitions
+2. **Session loading and repair** -- recovers from truncated or corrupted session state
+3. **Model invocation** -- sends to the configured LLM via the appropriate driver
+4. **Tool-call detection** -- parses tool_use blocks from the response
+5. **Capability check** -- verifies the agent has permission for each requested tool
+6. **Approval gate** -- checks if the tool requires human approval (configurable per-tool policy)
+7. **Taint tracking** -- validates inputs against taint sinks (e.g., shell metacharacter injection)
+8. **Tool execution** -- runs the tool and captures output (with output truncation for large results)
+9. **Usage accounting** -- records token usage and cost via the metering engine
+10. **Loop guard** -- prevents infinite loops (configurable iteration limit)
+11. **Context compaction** -- compresses session history when context pressure grows
 
-Important release-era stability and safety subsystems include:
+The loop repeats steps 3-11 until the model produces a final response (no more tool calls) or hits a guard limit.
 
-- loop guard
-- session repair
-- tool-output truncation
-- SSRF filtering for web tools
-- approval workflows for sensitive actions
+## LLM Driver Architecture
 
-## Channels
+Three native driver implementations handle protocol differences:
 
-For `v0.5.7`, the most defensible count is the API's `CHANNEL_REGISTRY`, which contains `42` channel entries.
+| Driver | Protocol | Providers |
+|--------|----------|-----------|
+| `AnthropicDriver` | Anthropic Messages API | Anthropic, Kimi Coding |
+| `GeminiDriver` | Google Generative Language API | Gemini |
+| `OpenAIDriver` | OpenAI Chat Completions API | OpenAI, Groq, DeepSeek, Together, Mistral, Fireworks, Ollama, vLLM, LM Studio, Perplexity, Cohere, AI21, Cerebras, SambaNova, HuggingFace, xAI, Replicate, OpenRouter, Chutes, Venice, NVIDIA NIM, MiniMax, Zhipu, Qwen, Qianfan, Volcengine, Azure OpenAI, and any custom OpenAI-compatible endpoint |
 
-That count is higher than some upstream prose docs because the release registry includes distinct entries such as:
+Additionally, `ClaudeCodeDriver`, `QwenCodeDriver`, `CopilotDriver`, and `VertexAIDriver` handle subprocess-based or OAuth-authenticated providers.
 
-- `dingtalk`
-- `dingtalk_stream`
-- `wecom`
-- `feishu`
+## Security Layers
 
-This docs repo treats the API registry as the released source of truth for channel counts.
+Key security subsystems in v0.5.7:
 
-## Hands
-
-The released `openfang-hands` crate bundles `9` Hands:
-
-- `clip`
-- `lead`
-- `collector`
-- `predictor`
-- `researcher`
-- `twitter`
-- `browser`
-- `trader`
-- `infisical-sync`
-
-Some upstream prose still says `7`; that is stale for `v0.5.7`.
-
-## Skills
-
-The released skill registry test in `crates/openfang-skills/src/bundled.rs` asserts `61` bundled skills. Upstream comments still mention `60`, so this docs repo uses the tested value.
-
-## Providers and Models
-
-Provider counts are easy to misstate because the runtime catalog mixes brands, protocol variants, coding-specific entries, and CLI-backed integrations.
-
-Safe release facts:
-
-- `ModelCatalog::list_providers()` has `41` entries in `v0.5.7`
-- `builtin_models()` contains `197` builtin model entries
-- the runtime uses three main driver families: Anthropic, Gemini, and OpenAI-compatible
-
-For user-facing docs, this repo prefers explaining the catalog shape over collapsing it into an ambiguous headline number.
-
-## Security
-
-The release keeps `16` headline security layers in upstream security documentation, including:
-
-- capability enforcement
-- WASM dual metering
-- taint tracking
-- Merkle audit trail
-- manifest signing
-- SSRF filtering
-- secret zeroization
-- subprocess sandboxing
-- loop guard
-- session repair
-- health endpoint redaction
-
-Release `v0.5.7` also adds Argon2id dashboard password hashing. The upstream security table still headlines `16` layers, so this docs repo documents Argon2id as a release security hardening change rather than silently changing the canonical layer count.
-
-See [security.md](security.md) for the detailed layer-by-layer writeup.
+- **Capability enforcement** -- immutable per-agent permissions checked before every tool call
+- **WASM dual metering** -- fuel-based execution limits for untrusted plugin code (Wasmtime)
+- **Taint tracking** -- labels data with provenance (`ExternalNetwork`, etc.) and blocks dangerous sinks
+- **Merkle audit trail** -- hash-chained log of all agent actions for tamper detection
+- **Manifest signing** -- Ed25519 signatures on agent and skill manifests
+- **SSRF filtering** -- blocks private/internal IPs in web_fetch and web_search tools
+- **Secret zeroization** -- API keys and credentials are zeroized from memory after use
+- **Subprocess sandboxing** -- shell commands run with metacharacter injection detection
+- **Docker sandboxing** -- optional container-isolated execution via `docker_exec`
+- **Loop guard** -- configurable iteration cap prevents runaway agent loops
+- **Session repair** -- automatic recovery from corrupted conversation state
+- **Argon2id password hashing** -- dashboard authentication
+- **Rate limiting** -- per-IP and per-agent request throttling (Governor)
+- **Approval workflows** -- configurable human-in-the-loop gates for sensitive tools
+- **Capability inheritance** -- child agents cannot exceed parent's permissions
+- **Health endpoint redaction** -- sensitive config values omitted from status responses

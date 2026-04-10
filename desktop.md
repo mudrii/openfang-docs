@@ -133,16 +133,25 @@ The window uses `WebviewUrl::External(...)` rather than a bundled frontend, beca
 
 ## CSP (Content Security Policy)
 
-The `tauri.conf.json` configures a Content Security Policy that allows connections to the local embedded server:
+The `tauri.conf.json` configures a Content Security Policy that allows connections to the local embedded server, Google Fonts, and media/blob sources:
 
 ```
-default-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;
-img-src 'self' data: http://127.0.0.1:*;
-style-src 'self' 'unsafe-inline';
-script-src 'self' 'unsafe-inline'
+default-src 'self' http://127.0.0.1:* ws://127.0.0.1:*
+         https://fonts.googleapis.com https://fonts.gstatic.com;
+img-src 'self' data: blob: http://127.0.0.1:*;
+style-src 'self' 'unsafe-inline'
+         https://fonts.googleapis.com https://fonts.gstatic.com;
+script-src 'self' 'unsafe-inline' 'unsafe-eval';
+font-src 'self' https://fonts.gstatic.com;
+connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;
+media-src 'self' blob: http://127.0.0.1:*;
+frame-src 'self' blob: http://127.0.0.1:*;
+object-src 'none';
+base-uri 'self';
+form-action 'self'
 ```
 
-This permits the WebView to load content from the localhost API server while blocking external resource loading.
+This permits the WebView to load content from the localhost API server and Google Fonts while blocking other external resource loading.
 
 ---
 
